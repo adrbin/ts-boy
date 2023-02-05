@@ -1,0 +1,17 @@
+{
+  "name": "ts-boy",
+  "version": "1.0.0",
+  "description": "Gameboy emulator in TypeScript",
+  "type": "module",
+  "scripts": {
+    "start": "parcel",
+    "build": "parcel build"
+  },
+  "author": "adrbin",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@parcel/packager-raw-url": "^2.8.2",
+    "@parcel/transformer-webmanifest": "^2.8.2",
+    "parcel": "^2.8.2"
+  }
+}

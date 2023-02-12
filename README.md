@@ -8,3 +8,4 @@ Links:
 - https://izik1.github.io/gbops/index.html
 - https://gbdev.io/pandocs/CPU_Instruction_Set.html
 - https://robdor.com/2016/08/10/gameboy-emulator-half-carry-flag/
+- https://ehaskins.com/2018-01-30%20Z80%20DAA/

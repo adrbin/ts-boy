@@ -1,7 +1,13 @@
 import { Clock } from '../clock';
 import { GameboyCpu } from '../gameboy-cpu';
 import { Flag, Register16, Register8 } from '../registers';
-import { hasByteSumCarry, hasByteSumHalfCarry, isSumZero } from '../utils';
+import {
+  hasByteSumCarry,
+  hasByteSumHalfCarry,
+  isSumZero,
+  toByte,
+  toNibble,
+} from '../utils';
 import { Operation, OperationInfo } from './operation';
 
 const incrementRegister8 = (register8: Register8): OperationInfo => {
@@ -49,7 +55,7 @@ const incrementHlAddress: OperationInfo = {
     const address = cpu.registers.getWord(Register16.HL);
     const byte = cpu.memory.getByte(address);
 
-    cpu.memory.setByte(address, byte + 1);
+    cpu.memory.setByte(address, toByte(byte + 1));
 
     const flags = {
       [Flag.Zero]: isSumZero(byte, 1),
@@ -68,7 +74,7 @@ const decrementHlAddress: OperationInfo = {
     const address = cpu.registers.getWord(Register16.HL);
     const byte = cpu.memory.getByte(address);
 
-    cpu.memory.setByte(address, byte - 1);
+    cpu.memory.setByte(address, toByte(byte - 1));
 
     const flags = {
       [Flag.Zero]: isSumZero(byte, -1),
@@ -82,7 +88,89 @@ const decrementHlAddress: OperationInfo = {
   clock: new Clock(1),
 };
 
-const addRegister8ToRegisterA = (
+const decimalAdjustA: OperationInfo = {
+  operation: (cpu: GameboyCpu) => {
+    const a = cpu.registers.getByte(Register8.A);
+    const oldFlags = cpu.registers.getFlags();
+
+    let adjustment = 0;
+
+    if (oldFlags[Flag.HalfCarry] || toNibble(a) > 9) {
+      adjustment = 6;
+    }
+
+    if (oldFlags[Flag.Carry] || a > 0x99) {
+      adjustment += 0x6;
+    }
+
+    if (oldFlags[Flag.Negative]) {
+      adjustment = -adjustment;
+    }
+
+    const resultByte = toByte(a + adjustment);
+
+    cpu.registers.setByte(Register8.A, resultByte);
+
+    const flags = {
+      [Flag.Zero]: resultByte === 0,
+      [Flag.HalfCarry]: false,
+      [Flag.Carry]: resultByte > 0x99,
+    };
+
+    cpu.registers.setFlags(flags);
+  },
+  length: 1,
+  clock: new Clock(1),
+};
+
+const complementA: OperationInfo = {
+  operation: (cpu: GameboyCpu) => {
+    const byte = cpu.registers.getByte(Register8.A);
+
+    cpu.registers.setByte(Register8.A, byte ^ 0xff);
+
+    const flags = {
+      [Flag.Negative]: true,
+      [Flag.HalfCarry]: true,
+    };
+
+    cpu.registers.setFlags(flags);
+  },
+  length: 1,
+  clock: new Clock(1),
+};
+
+const setCarryFlag: OperationInfo = {
+  operation: (cpu: GameboyCpu) => {
+    const flags = {
+      [Flag.Negative]: false,
+      [Flag.HalfCarry]: false,
+      [Flag.Carry]: true,
+    };
+
+    cpu.registers.setFlags(flags);
+  },
+  length: 1,
+  clock: new Clock(1),
+};
+
+const complementCarryFlag: OperationInfo = {
+  operation: (cpu: GameboyCpu) => {
+    const oldFlags = cpu.registers.getFlags();
+
+    const flags = {
+      [Flag.Negative]: false,
+      [Flag.HalfCarry]: false,
+      [Flag.Carry]: !oldFlags[Flag.Carry],
+    };
+
+    cpu.registers.setFlags(flags);
+  },
+  length: 1,
+  clock: new Clock(1),
+};
+
+const addRegister8ToA = (
   register8: Register8,
   withCarry = false,
 ): OperationInfo => {
@@ -109,7 +197,7 @@ const addRegister8ToRegisterA = (
   };
 };
 
-const addHlAddressToRegisterA = (withCarry = false): OperationInfo => {
+const addHlAddressToA = (withCarry = false): OperationInfo => {
   return {
     operation: (cpu: GameboyCpu) => {
       const a = cpu.registers.getByte(Register8.A);
@@ -134,7 +222,7 @@ const addHlAddressToRegisterA = (withCarry = false): OperationInfo => {
   };
 };
 
-const subtractRegister8FromRegisterA = (
+const subtractRegister8FromA = (
   register8: Register8,
   withCarry = false,
   withSave = true,
@@ -164,7 +252,7 @@ const subtractRegister8FromRegisterA = (
   };
 };
 
-const subtractHlAddressFromRegisterA = (
+const subtractHlAddressFromA = (
   withCarry = false,
   withSave = true,
 ): OperationInfo => {
@@ -209,7 +297,7 @@ const logicalOperations: Record<
   [LogicalOperation.Or]: (a: number, b: number) => a | b,
 };
 
-const logicallyApplyRegister8ToRegisterA = (
+const logicallyApplyRegister8ToA = (
   register8: Register8,
   logicalOperation: LogicalOperation,
 ): OperationInfo => {
@@ -236,7 +324,7 @@ const logicallyApplyRegister8ToRegisterA = (
   };
 };
 
-const logicalOperationHlAddressWithRegisterA = (
+const logicallyApplyHlAddressWithA = (
   logicalOperation: LogicalOperation,
 ): OperationInfo => {
   return {
@@ -260,6 +348,85 @@ const logicalOperationHlAddressWithRegisterA = (
     },
     length: 1,
     clock: new Clock(2),
+  };
+};
+
+const addByteToA = (withCarry = false): OperationInfo => {
+  return {
+    operation: (cpu: GameboyCpu) => {
+      const a = cpu.registers.getByte(Register8.A);
+      const byte = cpu.fetchByte();
+      const oldFlags = cpu.registers.getFlags();
+      const carry = withCarry && oldFlags[Flag.Carry] ? 1 : 0;
+
+      cpu.registers.incrementByte(Register8.A, byte + carry);
+
+      const newFlags = {
+        [Flag.Zero]: isSumZero(a, byte, carry),
+        [Flag.Negative]: false,
+        [Flag.HalfCarry]: hasByteSumHalfCarry(a, byte, carry),
+        [Flag.Carry]: hasByteSumCarry(a, byte, carry),
+      };
+
+      cpu.registers.setFlags(newFlags);
+    },
+    length: 2,
+    clock: new Clock(2),
+  };
+};
+
+const subtractByteFromA = (
+  withCarry = false,
+  withSave = true,
+): OperationInfo => {
+  return {
+    operation: (cpu: GameboyCpu) => {
+      const a = cpu.registers.getByte(Register8.A);
+      const byte = cpu.fetchByte();
+      const oldFlags = cpu.registers.getFlags();
+      const carry = withCarry && oldFlags[Flag.Carry] ? 1 : 0;
+
+      if (withSave) {
+        cpu.registers.decrementByte(Register8.A, byte + carry);
+      }
+
+      const newFlags = {
+        [Flag.Zero]: isSumZero(a, -byte, -carry),
+        [Flag.Negative]: true,
+        [Flag.HalfCarry]: hasByteSumHalfCarry(a, -byte, -carry),
+        [Flag.Carry]: hasByteSumCarry(a, -byte, -carry),
+      };
+
+      cpu.registers.setFlags(newFlags);
+    },
+    length: 2,
+    clock: new Clock(2),
+  };
+};
+
+const logicallyApplyByteToA = (
+  logicalOperation: LogicalOperation,
+): OperationInfo => {
+  return {
+    operation: (cpu: GameboyCpu) => {
+      const a = cpu.registers.getByte(Register8.A);
+      const byte = cpu.fetchByte();
+
+      const resultByte = logicalOperations[logicalOperation](a, byte);
+
+      cpu.registers.setByte(Register8.A, resultByte);
+
+      const newFlags = {
+        [Flag.Zero]: resultByte === 0,
+        [Flag.Negative]: false,
+        [Flag.HalfCarry]: true,
+        [Flag.Carry]: false,
+      };
+
+      cpu.registers.setFlags(newFlags);
+    },
+    length: 1,
+    clock: new Clock(1),
   };
 };
 
@@ -329,323 +496,350 @@ const operations: Operation[] = [
     operationInfo: decrementRegister8(Register8.A),
   },
   {
+    opcode: 0x27,
+    operationInfo: decimalAdjustA,
+  },
+  {
+    opcode: 0x2f,
+    operationInfo: complementA,
+  },
+  {
+    opcode: 0x37,
+    operationInfo: setCarryFlag,
+  },
+  {
+    opcode: 0x3f,
+    operationInfo: complementCarryFlag,
+  },
+  {
     opcode: 0x80,
-    operationInfo: addRegister8ToRegisterA(Register8.B),
+    operationInfo: addRegister8ToA(Register8.B),
   },
   {
     opcode: 0x81,
-    operationInfo: addRegister8ToRegisterA(Register8.C),
+    operationInfo: addRegister8ToA(Register8.C),
   },
   {
     opcode: 0x82,
-    operationInfo: addRegister8ToRegisterA(Register8.D),
+    operationInfo: addRegister8ToA(Register8.D),
   },
   {
     opcode: 0x83,
-    operationInfo: addRegister8ToRegisterA(Register8.E),
+    operationInfo: addRegister8ToA(Register8.E),
   },
   {
     opcode: 0x84,
-    operationInfo: addRegister8ToRegisterA(Register8.L),
+    operationInfo: addRegister8ToA(Register8.L),
   },
   {
     opcode: 0x85,
-    operationInfo: addRegister8ToRegisterA(Register8.B),
+    operationInfo: addRegister8ToA(Register8.B),
   },
   {
     opcode: 0x86,
-    operationInfo: addHlAddressToRegisterA(),
+    operationInfo: addHlAddressToA(),
   },
   {
     opcode: 0x87,
-    operationInfo: addRegister8ToRegisterA(Register8.A),
+    operationInfo: addRegister8ToA(Register8.A),
   },
   {
     opcode: 0x88,
-    operationInfo: addRegister8ToRegisterA(Register8.B, true),
+    operationInfo: addRegister8ToA(Register8.B, true),
   },
   {
     opcode: 0x89,
-    operationInfo: addRegister8ToRegisterA(Register8.C, true),
+    operationInfo: addRegister8ToA(Register8.C, true),
   },
   {
     opcode: 0x8a,
-    operationInfo: addRegister8ToRegisterA(Register8.D, true),
+    operationInfo: addRegister8ToA(Register8.D, true),
   },
   {
     opcode: 0x8b,
-    operationInfo: addRegister8ToRegisterA(Register8.E, true),
+    operationInfo: addRegister8ToA(Register8.E, true),
   },
   {
     opcode: 0x8c,
-    operationInfo: addRegister8ToRegisterA(Register8.L, true),
+    operationInfo: addRegister8ToA(Register8.L, true),
   },
   {
     opcode: 0x8d,
-    operationInfo: addRegister8ToRegisterA(Register8.B, true),
+    operationInfo: addRegister8ToA(Register8.B, true),
   },
   {
     opcode: 0x8e,
-    operationInfo: addHlAddressToRegisterA(true),
+    operationInfo: addHlAddressToA(true),
   },
   {
     opcode: 0x8f,
-    operationInfo: addRegister8ToRegisterA(Register8.A, true),
+    operationInfo: addRegister8ToA(Register8.A, true),
   },
   {
     opcode: 0x90,
-    operationInfo: subtractRegister8FromRegisterA(Register8.B),
+    operationInfo: subtractRegister8FromA(Register8.B),
   },
   {
     opcode: 0x91,
-    operationInfo: subtractRegister8FromRegisterA(Register8.C),
+    operationInfo: subtractRegister8FromA(Register8.C),
   },
   {
     opcode: 0x92,
-    operationInfo: subtractRegister8FromRegisterA(Register8.D),
+    operationInfo: subtractRegister8FromA(Register8.D),
   },
   {
     opcode: 0x93,
-    operationInfo: subtractRegister8FromRegisterA(Register8.E),
+    operationInfo: subtractRegister8FromA(Register8.E),
   },
   {
     opcode: 0x94,
-    operationInfo: subtractRegister8FromRegisterA(Register8.L),
+    operationInfo: subtractRegister8FromA(Register8.L),
   },
   {
     opcode: 0x95,
-    operationInfo: subtractRegister8FromRegisterA(Register8.B),
+    operationInfo: subtractRegister8FromA(Register8.B),
   },
   {
     opcode: 0x96,
-    operationInfo: subtractHlAddressFromRegisterA(),
+    operationInfo: subtractHlAddressFromA(),
   },
   {
     opcode: 0x97,
-    operationInfo: subtractRegister8FromRegisterA(Register8.A),
+    operationInfo: subtractRegister8FromA(Register8.A),
   },
   {
     opcode: 0x98,
-    operationInfo: subtractRegister8FromRegisterA(Register8.B, true),
+    operationInfo: subtractRegister8FromA(Register8.B, true),
   },
   {
     opcode: 0x99,
-    operationInfo: subtractRegister8FromRegisterA(Register8.C, true),
+    operationInfo: subtractRegister8FromA(Register8.C, true),
   },
   {
     opcode: 0x9a,
-    operationInfo: subtractRegister8FromRegisterA(Register8.D, true),
+    operationInfo: subtractRegister8FromA(Register8.D, true),
   },
   {
     opcode: 0x9b,
-    operationInfo: subtractRegister8FromRegisterA(Register8.E, true),
+    operationInfo: subtractRegister8FromA(Register8.E, true),
   },
   {
     opcode: 0x9c,
-    operationInfo: subtractRegister8FromRegisterA(Register8.L, true),
+    operationInfo: subtractRegister8FromA(Register8.L, true),
   },
   {
     opcode: 0x9d,
-    operationInfo: subtractRegister8FromRegisterA(Register8.B, true),
+    operationInfo: subtractRegister8FromA(Register8.B, true),
   },
   {
     opcode: 0x9e,
-    operationInfo: subtractHlAddressFromRegisterA(true),
+    operationInfo: subtractHlAddressFromA(true),
   },
   {
     opcode: 0x9f,
-    operationInfo: subtractRegister8FromRegisterA(Register8.A, true),
+    operationInfo: subtractRegister8FromA(Register8.A, true),
   },
   {
     opcode: 0xa0,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.B,
       LogicalOperation.And,
     ),
   },
   {
     opcode: 0xa1,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.C,
       LogicalOperation.And,
     ),
   },
   {
     opcode: 0xa2,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.D,
       LogicalOperation.And,
     ),
   },
   {
     opcode: 0xa3,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.E,
       LogicalOperation.And,
     ),
   },
   {
     opcode: 0xa4,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.L,
       LogicalOperation.And,
     ),
   },
   {
     opcode: 0xa5,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.B,
       LogicalOperation.And,
     ),
   },
   {
     opcode: 0xa6,
-    operationInfo: logicalOperationHlAddressWithRegisterA(LogicalOperation.And),
+    operationInfo: logicallyApplyHlAddressWithA(LogicalOperation.And),
   },
   {
     opcode: 0xa7,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.A,
       LogicalOperation.And,
     ),
   },
   {
     opcode: 0xa8,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.B,
       LogicalOperation.Xor,
     ),
   },
   {
     opcode: 0xa9,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.C,
       LogicalOperation.Xor,
     ),
   },
   {
     opcode: 0xaa,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.D,
       LogicalOperation.Xor,
     ),
   },
   {
     opcode: 0xab,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.E,
       LogicalOperation.Xor,
     ),
   },
   {
     opcode: 0xac,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.L,
       LogicalOperation.Xor,
     ),
   },
   {
     opcode: 0xad,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.B,
       LogicalOperation.Xor,
     ),
   },
   {
     opcode: 0xae,
-    operationInfo: logicalOperationHlAddressWithRegisterA(LogicalOperation.Xor),
+    operationInfo: logicallyApplyHlAddressWithA(LogicalOperation.Xor),
   },
   {
     opcode: 0xaf,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
+    operationInfo: logicallyApplyRegister8ToA(
       Register8.A,
       LogicalOperation.Xor,
     ),
   },
   {
     opcode: 0xb0,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
-      Register8.B,
-      LogicalOperation.Or,
-    ),
+    operationInfo: logicallyApplyRegister8ToA(Register8.B, LogicalOperation.Or),
   },
   {
     opcode: 0xb1,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
-      Register8.C,
-      LogicalOperation.Or,
-    ),
+    operationInfo: logicallyApplyRegister8ToA(Register8.C, LogicalOperation.Or),
   },
   {
     opcode: 0xb2,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
-      Register8.D,
-      LogicalOperation.Or,
-    ),
+    operationInfo: logicallyApplyRegister8ToA(Register8.D, LogicalOperation.Or),
   },
   {
     opcode: 0xb3,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
-      Register8.E,
-      LogicalOperation.Or,
-    ),
+    operationInfo: logicallyApplyRegister8ToA(Register8.E, LogicalOperation.Or),
   },
   {
     opcode: 0xb4,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
-      Register8.L,
-      LogicalOperation.Or,
-    ),
+    operationInfo: logicallyApplyRegister8ToA(Register8.L, LogicalOperation.Or),
   },
   {
     opcode: 0xb5,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
-      Register8.B,
-      LogicalOperation.Or,
-    ),
+    operationInfo: logicallyApplyRegister8ToA(Register8.B, LogicalOperation.Or),
   },
   {
     opcode: 0xb6,
-    operationInfo: logicalOperationHlAddressWithRegisterA(LogicalOperation.Or),
+    operationInfo: logicallyApplyHlAddressWithA(LogicalOperation.Or),
   },
   {
     opcode: 0xb7,
-    operationInfo: logicallyApplyRegister8ToRegisterA(
-      Register8.A,
-      LogicalOperation.Or,
-    ),
+    operationInfo: logicallyApplyRegister8ToA(Register8.A, LogicalOperation.Or),
   },
   {
     opcode: 0xb8,
-    operationInfo: subtractRegister8FromRegisterA(Register8.B, false, false),
+    operationInfo: subtractRegister8FromA(Register8.B, false, false),
   },
   {
     opcode: 0xb9,
-    operationInfo: subtractRegister8FromRegisterA(Register8.C, false, false),
+    operationInfo: subtractRegister8FromA(Register8.C, false, false),
   },
   {
     opcode: 0xba,
-    operationInfo: subtractRegister8FromRegisterA(Register8.D, false, false),
+    operationInfo: subtractRegister8FromA(Register8.D, false, false),
   },
   {
     opcode: 0xbb,
-    operationInfo: subtractRegister8FromRegisterA(Register8.E, false, false),
+    operationInfo: subtractRegister8FromA(Register8.E, false, false),
   },
   {
     opcode: 0xbc,
-    operationInfo: subtractRegister8FromRegisterA(Register8.L, false, false),
+    operationInfo: subtractRegister8FromA(Register8.L, false, false),
   },
   {
     opcode: 0xbd,
-    operationInfo: subtractRegister8FromRegisterA(Register8.B, false, false),
+    operationInfo: subtractRegister8FromA(Register8.B, false, false),
   },
   {
     opcode: 0xbe,
-    operationInfo: subtractHlAddressFromRegisterA(false, false),
+    operationInfo: subtractHlAddressFromA(false, false),
   },
   {
     opcode: 0xbf,
-    operationInfo: subtractRegister8FromRegisterA(Register8.A, false, false),
+    operationInfo: subtractRegister8FromA(Register8.A, false, false),
+  },
+  {
+    opcode: 0xc6,
+    operationInfo: addByteToA(),
+  },
+  {
+    opcode: 0xce,
+    operationInfo: addByteToA(true),
+  },
+  {
+    opcode: 0xd6,
+    operationInfo: subtractByteFromA(),
+  },
+  {
+    opcode: 0xde,
+    operationInfo: subtractByteFromA(true),
+  },
+  {
+    opcode: 0xe6,
+    operationInfo: logicallyApplyByteToA(LogicalOperation.And),
+  },
+  {
+    opcode: 0xee,
+    operationInfo: logicallyApplyByteToA(LogicalOperation.Xor),
+  },
+  {
+    opcode: 0xf6,
+    operationInfo: logicallyApplyByteToA(LogicalOperation.Or),
+  },
+  {
+    opcode: 0xfe,
+    operationInfo: subtractByteFromA(false, false),
   },
 ];
 

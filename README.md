@@ -1,6 +1,6 @@
 # ts-boy
 
-A Gameboy written in TypeScript
+A Gameboy emulator written in TypeScript (work in progress).
 
 Links:
 
@@ -9,3 +9,4 @@ Links:
 - https://gbdev.io/pandocs/CPU_Instruction_Set.html
 - https://robdor.com/2016/08/10/gameboy-emulator-half-carry-flag/
 - https://ehaskins.com/2018-01-30%20Z80%20DAA/
+- http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf

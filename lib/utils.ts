@@ -5,7 +5,7 @@ export const delay = (ms?: number) => {
 };
 
 export const getHigherNibble = (byte: number) => {
-  return (byte >> 4) & 0xf;
+  return (byte >>> 4) & 0xf;
 };
 
 export const getLowerNibble = (byte: number) => {
@@ -13,7 +13,7 @@ export const getLowerNibble = (byte: number) => {
 };
 
 export const getHigherByte = (byte: number) => {
-  return (byte >> 8) & 0xff;
+  return (byte >>> 8) & 0xff;
 };
 
 export const getLowerByte = (byte: number) => {
@@ -54,7 +54,7 @@ export const getRandomInt = (max: number) => {
 };
 
 export const getNthBit = (value: number, index: number) => {
-  return (value >> index) & 1;
+  return (value >>> index) & 1;
 };
 
 export const setNthBit = (value: number, index: number, bit: boolean) => {

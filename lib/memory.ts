@@ -1,63 +1,58 @@
-import { MEMORY_SIZE } from './constants';
-import {
-  getHigherByte,
-  getLowerByte,
-  isByte,
-  isWord,
-  joinBytes,
-} from './utils';
+import { IMemorySegment, MemorySegment } from './memory-segment';
+import { MemorySegmentMirror } from './memory-segment-mirror';
 
 export class Memory {
-  #array = new Uint8Array(MEMORY_SIZE);
+  #rom1 = new MemorySegment(0, 0x4000);
+  #rom2 = new MemorySegment(0x4000, 0x4000);
+  #vram = new MemorySegment(0x8000, 0x2000);
+  #eram = new MemorySegment(0xa000, 0x2000);
+  #wram = new MemorySegment(0xa000, 0x2000);
+  #echoram = new MemorySegmentMirror(0xe000, 0x1e00, this.#wram);
+  #oam = new MemorySegment(0xe000, 0x1e00);
+  #io = new MemorySegment(0xff00, 0x80);
+  #hram = new MemorySegment(0xff80, 0x80);
+
+  #memorySegments: IMemorySegment[] = [
+    this.#rom1,
+    this.#rom2,
+    this.#vram,
+    this.#eram,
+    this.#wram,
+    this.#echoram,
+    this.#oam,
+    this.#io,
+    this.#hram,
+  ];
 
   getByte(address: number) {
-    this.#checkMemoryBounds(address);
-
-    return this.#array[address];
+    const memorySegment = this.#getMemorySegment(address);
+    return memorySegment.getByteRelative(address);
   }
 
   getWord(address: number) {
-    this.#checkMemoryBounds(address);
-    this.#checkMemoryBounds(address + 1);
-
-    return joinBytes(this.#array[address], this.#array[address + 1]);
+    const memorySegment = this.#getMemorySegment(address);
+    return memorySegment.getWordRelative(address);
   }
 
   setByte(address: number, value: number) {
-    this.#checkMemoryBounds(address);
-    this.#checkByte(address, value);
-
-    this.#array[address] = value && 0xff;
+    const memorySegment = this.#getMemorySegment(address);
+    memorySegment.setByteRelative(address, value);
   }
 
   setWord(address: number, value: number) {
-    this.#checkMemoryBounds(address);
-    this.#checkMemoryBounds(address + 1);
-    this.#checkWord(address, value);
-
-    this.#array[address] = getLowerByte(value);
-    this.#array[address + 1] = getHigherByte(value);
+    const memorySegment = this.#getMemorySegment(address);
+    memorySegment.setWordAbsolute(address, value);
   }
 
-  #checkMemoryBounds(address: number) {
-    if (address < 0 || address >= MEMORY_SIZE) {
+  #getMemorySegment(address: number) {
+    const memorySegment = this.#memorySegments.filter(ms =>
+      ms.hasRelativeAddress(address),
+    )[0];
+
+    if (!memorySegment) {
       throw new Error(`Out of memory address: ${address}`);
     }
-  }
 
-  #checkByte(address: number, value: number) {
-    if (!isByte(value)) {
-      throw new Error(
-        `Byte overflow attempted to be written to the memory: ${value} at the address: ${address}`,
-      );
-    }
-  }
-
-  #checkWord(address: number, value: number) {
-    if (!isWord(value)) {
-      throw new Error(
-        `Word overflow attempted to be written to the memory: ${value} at the address: ${address}`,
-      );
-    }
+    return memorySegment;
   }
 }

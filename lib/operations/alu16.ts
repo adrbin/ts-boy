@@ -7,8 +7,9 @@ import {
   hasWordSumCarry,
   hasWordSumHalfCarry,
   toSignedByte,
+  toWord,
 } from '../utils';
-import { Operation, OperationInfo } from './operation';
+import { OperationCode, OperationInfo } from './operation';
 
 const incrementRegister16 = (register16: Register16): OperationInfo => {
   return {
@@ -59,14 +60,7 @@ const addByteToSp: OperationInfo = {
 
     cpu.registers.incrementWord(Register16.SP, signedByte);
 
-    const flags = {
-      [Flag.Zero]: false,
-      [Flag.Negative]: false,
-      [Flag.HalfCarry]: hasByteSumHalfCarry(sp, signedByte),
-      [Flag.Carry]: hasByteSumCarry(sp, signedByte),
-    };
-
-    cpu.registers.setFlags(flags);
+    setSpFlags(cpu, sp, signedByte);
   },
   length: 2,
   clock: new Clock(4),
@@ -77,24 +71,28 @@ const loadHlFromSpWithByte: OperationInfo = {
     const sp = cpu.registers.getWord(Register16.SP);
     const unsignedByte = cpu.fetchByte();
     const signedByte = toSignedByte(unsignedByte);
-    const sum = sp + signedByte;
+    const sum = toWord(sp + signedByte);
 
     cpu.registers.setWord(Register16.HL, sum);
 
-    const flags = {
-      [Flag.Zero]: false,
-      [Flag.Negative]: false,
-      [Flag.HalfCarry]: hasByteSumHalfCarry(sp, sum),
-      [Flag.Carry]: hasByteSumCarry(sp, sum),
-    };
-
-    cpu.registers.setFlags(flags);
+    setSpFlags(cpu, sp, signedByte);
   },
   length: 2,
   clock: new Clock(3),
 };
 
-const operations: Operation[] = [
+const setSpFlags = (cpu: GameboyCpu, sp: number, signedByte: number) => {
+  const flags = {
+    [Flag.Zero]: false,
+    [Flag.Negative]: false,
+    [Flag.HalfCarry]: hasByteSumHalfCarry(sp, signedByte),
+    [Flag.Carry]: hasByteSumCarry(sp, signedByte),
+  };
+
+  cpu.registers.setFlags(flags);
+};
+
+const operations: OperationCode[] = [
   {
     opcode: 0x03,
     operationInfo: incrementRegister16(Register16.BC),

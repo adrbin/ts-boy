@@ -1,7 +1,7 @@
 import { Clock } from '../clock';
 import { GameboyCpu } from '../gameboy-cpu';
 import { Register16, Register8 } from '../registers';
-import { Operation, OperationInfo } from './operation';
+import { OperationCode, OperationInfo } from './operation';
 
 const loadRegister16FromWord = (register16: Register16): OperationInfo => {
   return {
@@ -64,7 +64,7 @@ const loadSpFromHl = {
   clock: new Clock(2),
 };
 
-const operations: Operation[] = [
+const operations: OperationCode[] = [
   {
     opcode: 0x01,
     operationInfo: loadRegister16FromWord(Register16.BC),

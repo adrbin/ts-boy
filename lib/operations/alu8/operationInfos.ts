@@ -1,94 +1,90 @@
-import { Clock } from '../clock';
-import { GameboyCpu } from '../gameboy-cpu';
-import { Flag, Register16, Register8 } from '../registers';
+import { Clock } from '../../clock';
+import { GameboyCpu } from '../../gameboy-cpu';
+import { Flag, Register16, Register8 } from '../../registers';
 import {
   hasByteSumCarry,
   hasByteSumHalfCarry,
   isSumZero,
   toByte,
   toNibble,
-} from '../utils';
-import { Operation, OperationInfo } from './operation';
+} from '../../utils';
+import { OperationCode, OperationInfo } from '../operation';
 
-const incrementRegister8 = (register8: Register8): OperationInfo => {
+export const incrementRegister8 = (register8: Register8): OperationInfo => {
   return {
     operation: (cpu: GameboyCpu) => {
       const byte = cpu.registers.getByte(register8);
 
       cpu.registers.incrementByte(register8);
 
-      const flags = {
-        [Flag.Zero]: isSumZero(byte, 1),
-        [Flag.Negative]: false,
-        [Flag.HalfCarry]: hasByteSumHalfCarry(byte, 1),
-      };
-
-      cpu.registers.setFlags(flags);
+      setIncrementFlags(cpu, byte);
     },
     length: 1,
     clock: new Clock(1),
   };
 };
 
-const decrementRegister8 = (register8: Register8): OperationInfo => {
+export const decrementRegister8 = (register8: Register8): OperationInfo => {
   return {
     operation: (cpu: GameboyCpu) => {
       const byte = cpu.registers.getByte(register8);
 
       cpu.registers.decrementByte(register8);
 
-      const flags = {
-        [Flag.Zero]: isSumZero(byte, -1),
-        [Flag.Negative]: true,
-        [Flag.HalfCarry]: hasByteSumHalfCarry(byte, -1),
-      };
-
-      cpu.registers.setFlags(flags);
+      setDecrementFlags(cpu, byte);
     },
     length: 1,
     clock: new Clock(1),
   };
 };
 
-const incrementHlAddress: OperationInfo = {
+export const incrementHlAddress: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
     const address = cpu.registers.getWord(Register16.HL);
     const byte = cpu.memory.getByte(address);
 
     cpu.memory.setByte(address, toByte(byte + 1));
 
-    const flags = {
-      [Flag.Zero]: isSumZero(byte, 1),
-      [Flag.Negative]: false,
-      [Flag.HalfCarry]: hasByteSumHalfCarry(byte, 1),
-    };
-
-    cpu.registers.setFlags(flags);
+    setIncrementFlags(cpu, byte);
   },
   length: 1,
   clock: new Clock(1),
 };
 
-const decrementHlAddress: OperationInfo = {
+export const decrementHlAddress: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
     const address = cpu.registers.getWord(Register16.HL);
     const byte = cpu.memory.getByte(address);
 
     cpu.memory.setByte(address, toByte(byte - 1));
 
-    const flags = {
-      [Flag.Zero]: isSumZero(byte, -1),
-      [Flag.Negative]: true,
-      [Flag.HalfCarry]: hasByteSumHalfCarry(byte, -1),
-    };
-
-    cpu.registers.setFlags(flags);
+    setDecrementFlags(cpu, byte);
   },
   length: 1,
   clock: new Clock(1),
 };
 
-const decimalAdjustA: OperationInfo = {
+const setIncrementFlags = (cpu: GameboyCpu, byte: number) => {
+  const flags = {
+    [Flag.Zero]: isSumZero(byte, 1),
+    [Flag.Negative]: false,
+    [Flag.HalfCarry]: hasByteSumHalfCarry(byte, 1),
+  };
+
+  cpu.registers.setFlags(flags);
+};
+
+const setDecrementFlags = (cpu: GameboyCpu, byte: number) => {
+  const flags = {
+    [Flag.Zero]: isSumZero(byte, -1),
+    [Flag.Negative]: true,
+    [Flag.HalfCarry]: hasByteSumHalfCarry(byte, -1),
+  };
+
+  cpu.registers.setFlags(flags);
+};
+
+export const decimalAdjustA: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
     const a = cpu.registers.getByte(Register8.A);
     const oldFlags = cpu.registers.getFlags();
@@ -123,7 +119,7 @@ const decimalAdjustA: OperationInfo = {
   clock: new Clock(1),
 };
 
-const complementA: OperationInfo = {
+export const complementA: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
     const byte = cpu.registers.getByte(Register8.A);
 
@@ -154,7 +150,7 @@ const setCarryFlag: OperationInfo = {
   clock: new Clock(1),
 };
 
-const complementCarryFlag: OperationInfo = {
+export const complementCarryFlag: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
     const oldFlags = cpu.registers.getFlags();
 
@@ -170,7 +166,7 @@ const complementCarryFlag: OperationInfo = {
   clock: new Clock(1),
 };
 
-const addRegister8ToA = (
+export const addRegister8ToA = (
   register8: Register8,
   withCarry = false,
 ): OperationInfo => {
@@ -183,21 +179,14 @@ const addRegister8ToA = (
 
       cpu.registers.incrementByte(Register8.A, byte + carry);
 
-      const newFlags = {
-        [Flag.Zero]: isSumZero(a, byte, carry),
-        [Flag.Negative]: false,
-        [Flag.HalfCarry]: hasByteSumHalfCarry(a, byte, carry),
-        [Flag.Carry]: hasByteSumCarry(a, byte, carry),
-      };
-
-      cpu.registers.setFlags(newFlags);
+      setAddSubtractFlags(cpu, a, byte, carry, false);
     },
     length: 1,
     clock: new Clock(1),
   };
 };
 
-const addHlAddressToA = (withCarry = false): OperationInfo => {
+export const addHlAddressToA = (withCarry = false): OperationInfo => {
   return {
     operation: (cpu: GameboyCpu) => {
       const a = cpu.registers.getByte(Register8.A);
@@ -208,21 +197,14 @@ const addHlAddressToA = (withCarry = false): OperationInfo => {
 
       cpu.registers.incrementByte(Register8.A, byte + carry);
 
-      const newFlags = {
-        [Flag.Zero]: isSumZero(a, byte, carry),
-        [Flag.Negative]: false,
-        [Flag.HalfCarry]: hasByteSumHalfCarry(a, byte, carry),
-        [Flag.Carry]: hasByteSumCarry(a, byte, carry),
-      };
-
-      cpu.registers.setFlags(newFlags);
+      setAddSubtractFlags(cpu, a, byte, carry, false);
     },
     length: 1,
     clock: new Clock(2),
   };
 };
 
-const subtractRegister8FromA = (
+export const subtractRegister8FromA = (
   register8: Register8,
   withCarry = false,
   withSave = true,
@@ -238,21 +220,14 @@ const subtractRegister8FromA = (
         cpu.registers.decrementByte(Register8.A, byte + carry);
       }
 
-      const newFlags = {
-        [Flag.Zero]: isSumZero(a, -byte, -carry),
-        [Flag.Negative]: true,
-        [Flag.HalfCarry]: hasByteSumHalfCarry(a, -byte, -carry),
-        [Flag.Carry]: hasByteSumCarry(a, -byte, -carry),
-      };
-
-      cpu.registers.setFlags(newFlags);
+      setAddSubtractFlags(cpu, a, -byte, -carry, true);
     },
     length: 1,
     clock: new Clock(1),
   };
 };
 
-const subtractHlAddressFromA = (
+export const subtractHlAddressFromA = (
   withCarry = false,
   withSave = true,
 ): OperationInfo => {
@@ -268,21 +243,31 @@ const subtractHlAddressFromA = (
         cpu.registers.decrementByte(Register8.A, byte + carry);
       }
 
-      const newFlags = {
-        [Flag.Zero]: isSumZero(a, -byte, -carry),
-        [Flag.Negative]: true,
-        [Flag.HalfCarry]: hasByteSumHalfCarry(a, -byte, -carry),
-        [Flag.Carry]: hasByteSumCarry(a, -byte, -carry),
-      };
-
-      cpu.registers.setFlags(newFlags);
+      setAddSubtractFlags(cpu, a, -byte, -carry, true);
     },
     length: 1,
     clock: new Clock(2),
   };
 };
 
-enum LogicalOperation {
+const setAddSubtractFlags = (
+  cpu: GameboyCpu,
+  a: number,
+  byte: number,
+  carry: number,
+  negativeFlag: boolean,
+) => {
+  const flags = {
+    [Flag.Zero]: isSumZero(a, byte, carry),
+    [Flag.Negative]: negativeFlag,
+    [Flag.HalfCarry]: hasByteSumHalfCarry(a, byte, carry),
+    [Flag.Carry]: hasByteSumCarry(a, byte, carry),
+  };
+
+  cpu.registers.setFlags(flags);
+};
+
+export enum LogicalOperation {
   And,
   Xor,
   Or,
@@ -297,7 +282,7 @@ const logicalOperations: Record<
   [LogicalOperation.Or]: (a: number, b: number) => a | b,
 };
 
-const logicallyApplyRegister8ToA = (
+export const logicallyApplyRegister8ToA = (
   register8: Register8,
   logicalOperation: LogicalOperation,
 ): OperationInfo => {
@@ -310,21 +295,14 @@ const logicallyApplyRegister8ToA = (
 
       cpu.registers.setByte(Register8.A, resultByte);
 
-      const newFlags = {
-        [Flag.Zero]: resultByte === 0,
-        [Flag.Negative]: false,
-        [Flag.HalfCarry]: true,
-        [Flag.Carry]: false,
-      };
-
-      cpu.registers.setFlags(newFlags);
+      setLogicalOperationsFlags(cpu, resultByte);
     },
     length: 1,
     clock: new Clock(1),
   };
 };
 
-const logicallyApplyHlAddressWithA = (
+export const logicallyApplyHlAddressWithA = (
   logicalOperation: LogicalOperation,
 ): OperationInfo => {
   return {
@@ -337,21 +315,25 @@ const logicallyApplyHlAddressWithA = (
 
       cpu.registers.setByte(Register8.A, resultByte);
 
-      const newFlags = {
-        [Flag.Zero]: resultByte === 0,
-        [Flag.Negative]: false,
-        [Flag.HalfCarry]: true,
-        [Flag.Carry]: false,
-      };
-
-      cpu.registers.setFlags(newFlags);
+      setLogicalOperationsFlags(cpu, resultByte);
     },
     length: 1,
     clock: new Clock(2),
   };
 };
 
-const addByteToA = (withCarry = false): OperationInfo => {
+const setLogicalOperationsFlags = (cpu: GameboyCpu, resultByte: number) => {
+  const flags = {
+    [Flag.Zero]: resultByte === 0,
+    [Flag.Negative]: false,
+    [Flag.HalfCarry]: true,
+    [Flag.Carry]: false,
+  };
+
+  cpu.registers.setFlags(flags);
+};
+
+export const addByteToA = (withCarry = false): OperationInfo => {
   return {
     operation: (cpu: GameboyCpu) => {
       const a = cpu.registers.getByte(Register8.A);
@@ -361,21 +343,14 @@ const addByteToA = (withCarry = false): OperationInfo => {
 
       cpu.registers.incrementByte(Register8.A, byte + carry);
 
-      const newFlags = {
-        [Flag.Zero]: isSumZero(a, byte, carry),
-        [Flag.Negative]: false,
-        [Flag.HalfCarry]: hasByteSumHalfCarry(a, byte, carry),
-        [Flag.Carry]: hasByteSumCarry(a, byte, carry),
-      };
-
-      cpu.registers.setFlags(newFlags);
+      setAddSubtractAFlags(cpu, a, byte, carry, false);
     },
     length: 2,
     clock: new Clock(2),
   };
 };
 
-const subtractByteFromA = (
+export const subtractByteFromA = (
   withCarry = false,
   withSave = true,
 ): OperationInfo => {
@@ -390,21 +365,31 @@ const subtractByteFromA = (
         cpu.registers.decrementByte(Register8.A, byte + carry);
       }
 
-      const newFlags = {
-        [Flag.Zero]: isSumZero(a, -byte, -carry),
-        [Flag.Negative]: true,
-        [Flag.HalfCarry]: hasByteSumHalfCarry(a, -byte, -carry),
-        [Flag.Carry]: hasByteSumCarry(a, -byte, -carry),
-      };
-
-      cpu.registers.setFlags(newFlags);
+      setAddSubtractAFlags(cpu, a, -byte, -carry, true);
     },
     length: 2,
     clock: new Clock(2),
   };
 };
 
-const logicallyApplyByteToA = (
+const setAddSubtractAFlags = (
+  cpu: GameboyCpu,
+  a: number,
+  byte: number,
+  carry: number,
+  negativeFlag: boolean,
+) => {
+  const flags = {
+    [Flag.Zero]: isSumZero(a, byte, carry),
+    [Flag.Negative]: negativeFlag,
+    [Flag.HalfCarry]: hasByteSumHalfCarry(a, byte, carry),
+    [Flag.Carry]: hasByteSumCarry(a, byte, carry),
+  };
+
+  cpu.registers.setFlags(flags);
+};
+
+export const logicallyApplyByteToA = (
   logicalOperation: LogicalOperation,
 ): OperationInfo => {
   return {
@@ -430,7 +415,7 @@ const logicallyApplyByteToA = (
   };
 };
 
-const operations: Operation[] = [
+const operations: OperationCode[] = [
   {
     opcode: 0x04,
     operationInfo: incrementRegister8(Register8.B),

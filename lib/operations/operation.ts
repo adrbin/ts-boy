@@ -3,7 +3,7 @@ import { GameboyCpu } from '../gameboy-cpu';
 
 export type OperationCallback = (cpu: GameboyCpu) => void;
 
-export interface Operation {
+export interface OperationCode {
   readonly opcode: number;
   readonly operationInfo: OperationInfo;
 }

@@ -1,7 +1,7 @@
 import { Clock } from '../clock';
 import { GameboyCpu } from '../gameboy-cpu';
 import { Register16, Register8 } from '../registers';
-import { Operation, OperationInfo } from './operation';
+import { OperationCode, OperationInfo } from './operation';
 
 const loadHlAddressWithIncrementFromA: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
@@ -181,7 +181,7 @@ const loadAFromAddress = {
   clock: new Clock(4),
 };
 
-const operations: Operation[] = [
+const operations: OperationCode[] = [
   {
     opcode: 0x22,
     operationInfo: loadHlAddressWithIncrementFromA,

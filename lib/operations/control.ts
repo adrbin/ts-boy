@@ -2,7 +2,7 @@ import { Clock } from '../clock';
 import { GameboyCpu } from '../gameboy-cpu';
 import { Flag, Flags, Register16, Register8 } from '../registers';
 import { toSignedByte } from '../utils';
-import { Operation, OperationInfo } from './operation';
+import { OperationCode, OperationInfo } from './operation';
 
 const jumpRelativeWithCondition = (
   condition: (flags: Flags) => boolean,
@@ -118,7 +118,7 @@ const reset = (address: number): OperationInfo => {
   };
 };
 
-const operations: Operation[] = [
+const operations: OperationCode[] = [
   {
     opcode: 0x20,
     operationInfo: jumpRelativeWithCondition(flags => !flags[Flag.Zero]),

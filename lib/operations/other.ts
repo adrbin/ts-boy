@@ -1,6 +1,6 @@
 import { Clock } from '../clock';
 import { GameboyCpu } from '../gameboy-cpu';
-import { Operation, OperationInfo } from './operation';
+import { OperationCode, OperationInfo } from './operation';
 
 const nop: OperationInfo = {
   operation: () => {},
@@ -48,7 +48,7 @@ const prefixCb: OperationInfo = {
   clock: new Clock(1),
 };
 
-const operations: Operation[] = [
+const operations: OperationCode[] = [
   {
     opcode: 0x00,
     operationInfo: nop,

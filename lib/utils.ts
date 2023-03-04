@@ -39,10 +39,7 @@ export const joinBytes = (...bytes: number[]) => {
 };
 
 export const joinNumbers = (numbers: number[], bitLength: number) => {
-  return numbers.reduce(
-    (acc, cur, i) => acc + (cur << ((numbers.length - i - 1) * bitLength)),
-    0,
-  );
+  return numbers.reduce((acc, cur, i) => acc + (cur << (i * bitLength)), 0);
 };
 
 export const mod = (n: number, m: number) => {
@@ -57,8 +54,12 @@ export const getNthBit = (value: number, index: number) => {
   return (value >>> index) & 1;
 };
 
-export const setNthBit = (value: number, index: number, bit: boolean) => {
-  return bit ? value | (1 << index) : value & ~(1 << index);
+export const setNthBit = (
+  value: number,
+  index: number,
+  bit: boolean | number,
+) => {
+  return !!bit ? value | (1 << index) : value & ~(1 << index);
 };
 
 export const getBcd = (n: number, digits: number) => {

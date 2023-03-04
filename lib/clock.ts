@@ -1,11 +1,13 @@
-export class Clock {
-  m = 0;
+import { ClockData } from './clock-data';
 
-  constructor(m = 0) {
-    this.m = m;
+export class Clock {
+  clockData: ClockData;
+
+  constructor(clockData = new ClockData()) {
+    this.clockData = clockData;
   }
 
-  get t() {
-    return this.m * 4;
+  increment(clock: ClockData) {
+    this.clockData.m += clock.m;
   }
 }

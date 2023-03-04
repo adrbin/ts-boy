@@ -1,15 +1,15 @@
-import { Clock } from '../clock';
-import { GameboyCpu } from '../gameboy-cpu';
-import { Flag, Register8 } from '../registers';
-import { getNthBit, toByte } from '../utils';
-import { OperationCode, OperationInfo } from './operation';
+import { ClockData } from '../../clock-data';
+import { GameboyCpu } from '../../gameboy-cpu';
+import { Flag, Register8 } from '../../registers';
+import { getNthBit, toByte } from '../../utils';
+import { OperationInfo } from '../operation';
 
-enum RotateMode {
+export enum RotateMode {
   Normal,
   ThroughCarry,
 }
 
-const rotateLeftA = (mode: RotateMode): OperationInfo => {
+export const rotateLeftA = (mode: RotateMode): OperationInfo => {
   return {
     operation: (cpu: GameboyCpu) => {
       const a = cpu.registers.getByte(Register8.A);
@@ -25,11 +25,11 @@ const rotateLeftA = (mode: RotateMode): OperationInfo => {
       setRotateFlags(cpu, bit7);
     },
     length: 1,
-    clock: new Clock(1),
+    clock: new ClockData(1),
   };
 };
 
-const rotateRightA = (mode: RotateMode): OperationInfo => {
+export const rotateRightA = (mode: RotateMode): OperationInfo => {
   return {
     operation: (cpu: GameboyCpu) => {
       const a = cpu.registers.getByte(Register8.A);
@@ -45,7 +45,7 @@ const rotateRightA = (mode: RotateMode): OperationInfo => {
       setRotateFlags(cpu, bit0);
     },
     length: 1,
-    clock: new Clock(1),
+    clock: new ClockData(1),
   };
 };
 
@@ -59,24 +59,3 @@ const setRotateFlags = (cpu: GameboyCpu, carryBit: number) => {
 
   cpu.registers.setFlags(flags);
 };
-
-const operations: OperationCode[] = [
-  {
-    opcode: 0x07,
-    operationInfo: rotateLeftA(RotateMode.Normal),
-  },
-  {
-    opcode: 0x0e,
-    operationInfo: rotateRightA(RotateMode.Normal),
-  },
-  {
-    opcode: 0x17,
-    operationInfo: rotateLeftA(RotateMode.ThroughCarry),
-  },
-  {
-    opcode: 0x1e,
-    operationInfo: rotateRightA(RotateMode.ThroughCarry),
-  },
-];
-
-export default operations;

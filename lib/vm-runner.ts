@@ -1,4 +1,4 @@
-import { DELAY_FACTOR, FRAME_TIME_IN_MS } from './constants';
+import { DELAY_FACTOR } from './constants';
 import { delay } from './utils';
 import { GameboyEmulator } from './gameboy-emulator';
 import { Display } from './display';

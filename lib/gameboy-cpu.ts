@@ -5,11 +5,15 @@ import { Register16, Registers } from './registers';
 
 export class GameboyCpu {
   registers = new Registers();
-  memory = new Memory();
+  memory: Memory;
   clock = new Clock();
   isStopped = false;
   isHalted = false;
   hasBranched = false;
+
+  constructor(bios: Uint8Array, rom: Uint8Array | undefined = undefined) {
+    this.memory = new Memory(bios, rom);
+  }
 
   execute() {
     const opcode = this.fetchByte();
@@ -35,17 +39,25 @@ export class GameboyCpu {
   }
 
   fetchByte() {
-    const sp = this.registers.getWord(Register16.PC);
-    const byte = this.memory.getByte(sp);
-    this.registers.incrementWord(Register16.PC, 1);
+    const pc = this.registers.getWord(Register16.PC);
+    this.#checkBios(pc);
+    this.registers.incrementWord(Register16.PC);
+    const byte = this.memory.getByte(pc);
     return byte;
   }
 
   fetchWord() {
-    const sp = this.registers.getWord(Register16.PC);
-    const word = this.memory.getWord(sp);
+    const pc = this.registers.getWord(Register16.PC);
+    this.#checkBios(pc);
     this.registers.incrementWord(Register16.PC, 2);
+    const word = this.memory.getWord(pc);
     return word;
+  }
+
+  #checkBios(pc: number) {
+    if (this.memory.isBiosLoaded && !this.memory.bios.hasRelativeAddress(pc)) {
+      this.memory.isBiosLoaded = false;
+    }
   }
 
   popSp(register16: Register16) {

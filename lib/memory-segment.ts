@@ -26,10 +26,14 @@ export class MemorySegment implements IMemorySegment {
   length: number;
   #array: Uint8Array;
 
-  constructor(start: number, length: number) {
+  constructor(
+    start: number,
+    length: number,
+    data: Uint8Array | undefined = undefined,
+  ) {
     this.start = start;
     this.length = length;
-    this.#array = new Uint8Array(length);
+    this.#array = data ?? new Uint8Array(length);
   }
 
   get end() {

@@ -1,104 +1,64 @@
-import {
-  DISPLAY_HEIGHT,
-  DISPLAY_WIDTH,
-  MEMORY_SIZE,
-  PROGRAM_START,
-  REGISTER_COUNT,
-} from './constants';
+import { FRAME_LENGTH, FRAME_TIME_IN_MS } from './constants';
+import { delay } from './utils';
 import { Display } from './display';
-import { getHigherNibble, getLowerNibble, nibblesToHex } from './utils';
+import { GameboyCpu } from './gameboy-cpu';
+import { Clock } from './clock';
+import { GameboyGpu } from './gameboy-gpu';
+import { ClockData } from './clock-data';
 
-export type InstructionArray = [number, number, number, number];
-export type MatchInstructionCallback = (
-  instruction: InstructionArray,
-) => boolean;
-export type OperationCallback = (
-  instruction: InstructionArray,
-) => Promise<void> | void;
-
-export type InstructionCondition = [
-  MatchInstructionCallback,
-  OperationCallback,
-];
-
-export type InputCallback = () => Set<number>;
-export type WaitInputCallback = () => Promise<number>;
-export type CancelWaitInputCallback = () => void;
-
-export interface Input {
-  getInput: InputCallback;
-  waitInput: WaitInputCallback;
-  cancelWait: CancelWaitInputCallback;
+export interface Renderer {
+  init: () => Promise<void> | void;
+  draw: (display: Display) => Promise<void> | void;
 }
 
-export interface Storage {
-  save: (data: any) => Promise<void> | void;
-  load: () => Promise<any> | any;
+export interface Audio {
+  play: () => void;
+  stop: () => void;
 }
 
-export interface VmParams {
-  program: Uint8Array;
-  input: Input;
-  logger?: Console;
-  storage?: Storage;
+export interface GameboyEmulatorParams {
+  cpu: GameboyCpu;
+  clock: Clock;
+  renderer: Renderer;
+  audio: Audio;
 }
 
-export class GameboyEmulator {
-  memory = new Uint8Array(MEMORY_SIZE);
-  display = new Display(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-  registers = new Uint8Array(REGISTER_COUNT);
-  pc = PROGRAM_START;
-  sp = -1;
-  stack: number[] = [];
-  isHalted = false;
-  input: Input;
-  logger?: Console;
-  storage?: Storage;
+export class VmRunner {
+  cpu: GameboyCpu;
+  gpu: GameboyGpu;
+  clock = new Clock(new ClockData(), FRAME_LENGTH);
+  renderer: Renderer;
+  audio: Audio;
+  isStopped = false;
 
-  operations: InstructionCondition[];
-
-  constructor({ program, input, logger, storage }: VmParams) {
-    for (let i = 0; i < program.length; i++) {
-      this.memory[PROGRAM_START + i] = program[i];
-    }
-
-    this.input = input;
-    this.logger = logger;
-    this.storage = storage;
+  constructor({ cpu, clock, renderer, audio }: GameboyEmulatorParams) {
+    this.cpu = cpu;
+    this.clock = clock;
+    this.renderer = renderer;
+    this.audio = audio;
   }
 
-  async executeInstruction() {
-    const instruction = this.fetchInstruction();
-    const [_, operation] =
-      this.operations.find(([condition]) => condition(instruction)) ?? [];
+  async run() {
+    this.isStopped = false;
+    await this.renderer.init();
 
-    if (!operation) {
-      this.logger?.warn('Unknown instruction: ', nibblesToHex(instruction));
-      return;
+    let i = 0;
+
+    while (!this.cpu.isHalted && !this.isStopped) {
+      const clockData = this.cpu.step();
+      this.gpu.step();
+
+      this.clock.increment(clockData);
+
+      if (this.clock.didReset) {
+        await this.renderer.draw(this.cpu.display);
+        await delay(FRAME_TIME_IN_MS);
+      }
     }
-
-    await operation.bind(this)(instruction);
   }
 
-  fetchInstruction(): InstructionArray {
-    if (this.isHalted) {
-      throw new Error('The program is halted.');
-    }
-
-    if (this.pc >= MEMORY_SIZE - 1) {
-      throw new Error('Program counter has reached the end of the memory.');
-    }
-    const byte1 = this.memory[this.pc++];
-    const byte2 = this.memory[this.pc++];
-    return [
-      getHigherNibble(byte1),
-      getLowerNibble(byte1),
-      getHigherNibble(byte2),
-      getLowerNibble(byte2),
-    ];
-  }
-
-  clear() {
-    this.display = new Display(this.display.width, this.display.height);
+  async stop() {
+    this.isStopped = true;
+    await delay();
   }
 }

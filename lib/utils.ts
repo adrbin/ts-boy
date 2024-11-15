@@ -54,6 +54,9 @@ export const getNthBit = (value: number, index: number) => {
   return (value >>> index) & 1;
 };
 
+export const getNthBitFlag = (value: number, index: number) =>
+  getNthBit(value, index) === 1;
+
 export const setNthBit = (
   value: number,
   index: number,
@@ -147,6 +150,26 @@ export const getEnumValues = (en: Record<string, string | number>) => {
   return Object.values(en)
     .map(Number)
     .filter(x => !isNaN(x));
+};
+
+export const getEnumValuesToFlagObject = <T>(
+  en: Record<string, string | number>,
+  byte: number,
+) => {
+  return getEnumValues(en).reduce((acc, index) => {
+    acc[index] = getNthBitFlag(byte, index);
+    return acc;
+  }, {} as T);
+};
+
+export const getEnumValuesToNumericObject = <T>(
+  en: Record<string, string | number>,
+  byte: number,
+) => {
+  return getEnumValues(en).reduce((acc, index) => {
+    acc[index] = getNthBit(byte, index);
+    return acc;
+  }, {} as T);
 };
 
 export const isSumZero = (...values: number[]) => {

@@ -3,6 +3,7 @@ import {
   getHigherByte,
   getLowerByte,
   getNthBit,
+  getNthBitFlag,
   isByte,
   isWord,
   joinBytes,
@@ -77,9 +78,9 @@ export class Registers {
     return this.#registers8.get(register8) as number;
   }
 
-  setByte(register8: Register8, value: number) {
-    this.#checkByte(register8, value);
-    this.#registers8.set(register8, value);
+  setByte(register8: Register8, byte: number) {
+    this.#checkByte(register8, byte);
+    this.#registers8.set(register8, byte);
   }
 
   setRegister8(targetRegister8: Register8, sourceRegister8: Register8) {
@@ -87,18 +88,18 @@ export class Registers {
     this.setByte(targetRegister8, byte);
   }
 
-  incrementByte(register8: Register8, value = 1) {
-    const currentValue = this.getByte(register8);
-    const newValue = toByte(currentValue + value);
+  incrementByte(register8: Register8, increment = 1) {
+    const byte = this.getByte(register8);
+    const newByte = toByte(byte + increment);
 
-    this.setByte(register8, newValue);
+    this.setByte(register8, newByte);
   }
 
-  decrementByte(register8: Register8, value = 1) {
-    const currentValue = this.getByte(register8);
-    const newValue = toByte(currentValue - value);
+  decrementByte(register8: Register8, decrement = 1) {
+    const currentByte = this.getByte(register8);
+    const newByte = toByte(currentByte - decrement);
 
-    this.setByte(register8, newValue);
+    this.setByte(register8, newByte);
   }
 
   getWord(register16: Register16) {
@@ -115,16 +116,17 @@ export class Registers {
     return joinBytes(...bytes);
   }
 
-  setWord(register16: Register16, value: number) {
-    this.#checkWord(register16, value);
+  setWord(register16: Register16, word: number) {
+    this.#checkWord(register16, word);
 
     if (register16 in Register16Standalone) {
-      return this.#registers16.set(register16 as Register16Standalone, value);
+      this.#registers16.set(register16 as Register16Standalone, word);
+      return;
     }
 
     const registers = registerMapping[register16 as Register16Combined];
-    this.#registers8[registers[0]] = getLowerByte(value);
-    this.#registers8[registers[1]] = getHigherByte(value);
+    this.#registers8[registers[0]] = getLowerByte(word);
+    this.#registers8[registers[1]] = getHigherByte(word);
   }
 
   setRegister16(targetRegister16: Register16, sourceRegister16: Register16) {
@@ -132,27 +134,25 @@ export class Registers {
     this.setWord(targetRegister16, word);
   }
 
-  incrementWord(register16: Register16, value = 1) {
-    const currentValue = this.getWord(register16);
-    const newValue = toWord(currentValue + value);
+  incrementWord(register16: Register16, increment = 1) {
+    const currentWord = this.getWord(register16);
+    const newWord = toWord(currentWord + increment);
 
-    this.setWord(register16, newValue);
+    this.setWord(register16, newWord);
   }
 
-  decrementWord(register16: Register16, value = 1) {
-    const currentValue = this.getWord(register16);
-    const newValue = toWord(currentValue - value);
+  decrementWord(register16: Register16, decrement = 1) {
+    const currentWord = this.getWord(register16);
+    const newWord = toWord(currentWord - decrement);
 
-    this.setWord(register16, newValue);
+    this.setWord(register16, newWord);
   }
 
   getFlags(): Flags {
     const f = this.getByte(Register8.F);
 
-    const getNthBitFlag = (index: number) => getNthBit(f, index) === 1;
-
     const flags = getEnumValues(Flag).reduce((acc, flag) => {
-      acc[flag] = getNthBitFlag(flag);
+      acc[flag] = getNthBitFlag(f, flag);
       return acc;
     }, {} as Flags);
 

@@ -6,16 +6,21 @@ import { Register16, Registers } from './registers';
 export class GameboyCpu {
   registers = new Registers();
   memory: Memory;
-  clock = new Clock();
+  clock: Clock;
   isStopped = false;
   isHalted = false;
   hasBranched = false;
 
-  constructor(bios: Uint8Array, rom: Uint8Array | undefined = undefined) {
+  constructor(
+    bios: Uint8Array,
+    clock: Clock,
+    rom: Uint8Array | undefined = undefined,
+  ) {
     this.memory = new Memory(bios, rom);
+    this.clock = clock;
   }
 
-  execute() {
+  step() {
     const opcode = this.fetchByte();
     const operationInfo = operationCodesMap.get(opcode)?.operationInfo;
     if (operationInfo === undefined) {
@@ -36,6 +41,8 @@ export class GameboyCpu {
     this.clock.increment(clockData);
 
     this.hasBranched = false;
+
+    return clockData;
   }
 
   fetchByte() {

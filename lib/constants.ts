@@ -1,8 +1,8 @@
 export const KILOBYTE = 2 ^ 10;
 export const MEMORY_SIZE = 64 * KILOBYTE;
 export const PROGRAM_START = 512;
-export const BYTE_SIZE = 256;
 export const BYTE_LENGTH = 8;
+export const WORD_LENGTH = 16;
 export const REGISTER_COUNT = 16;
 export const FLAG_REGISTER = REGISTER_COUNT - 1;
 export const FPS = 60;
@@ -11,24 +11,35 @@ export const ONE_SECOND_IN_MS = 1000;
 export const INPUT_DELAY = 100;
 export const DELAY_FACTOR = 10;
 
-export const DISPLAY_WIDTH = 64;
-export const DISPLAY_HEIGHT = 32;
+export const DISPLAY_WIDTH = 160;
+export const DISPLAY_HEIGHT = 144;
+export const RGBA_SIZE = 4;
+export const FRAME_LENGTH = 70224;
+export const FRAME_LINE_LENGTH = 456;
+export const OAM_SCAN_LENGTH = 80;
+export const DRAWING_LENGTH = 172;
+export const VBLANK_HEIGHT = 10;
+export const TILE_LENGTH = 8;
+export const TILE_SIZE = 16;
+export const OAM_COUNT = 40;
+export const OAM_SIZE = 4;
+export const TILE_MAP_LENGTH = 32;
 
-export const HIGH_RES_DISPLAY_WIDTH = 128;
-export const HIGH_RES_DISPLAY_HEIGHT = 64;
-
-export const FONT_DATA = [
-  0xf0, 0x90, 0x90, 0x90, 0xf0, 0x20, 0x60, 0x20, 0x20, 0x70, 0xf0, 0x10, 0xf0,
-  0x80, 0xf0, 0xf0, 0x10, 0xf0, 0x10, 0xf0, 0x90, 0x90, 0xf0, 0x10, 0x10, 0xf0,
-  0x80, 0xf0, 0x10, 0xf0, 0xf0, 0x80, 0xf0, 0x90, 0xf0, 0xf0, 0x10, 0x20, 0x40,
-  0x40, 0xf0, 0x90, 0xf0, 0x90, 0xf0, 0xf0, 0x90, 0xf0, 0x10, 0xf0, 0xf0, 0x90,
-  0xf0, 0x90, 0x90, 0xe0, 0x90, 0xe0, 0x90, 0xe0, 0xf0, 0x80, 0x80, 0x80, 0xf0,
-  0xe0, 0x90, 0x90, 0x90, 0xe0, 0xf0, 0x80, 0xf0, 0x80, 0xf0, 0xf0, 0x80, 0xf0,
-  0x80, 0x80,
-];
-
-export const FONT_DATA_START = 0;
-export const LARGE_FONT_DATA_START = FONT_DATA.length;
+export const LCD_CONTROL_ADDRESS = 0xff40;
+export const SCY_ADDRESS = 0xff42;
+export const SCX_ADDRESS = 0xff43;
+export const WY_ADDRESS = 0xff4a;
+export const WX_ADDRESS = 0xff4b;
+export const LY_ADDRESS = 0xff44;
+export const LYC_ADDRESS = 0xff45;
+export const STAT_ADDRESS = 0xff41;
+export const BGP_ADDRESS = 0xff47;
+export const OBP0_ADDRESS = 0xff48;
+export const OBP1_ADDRESS = 0xff49;
+export const TILE_DATA_ADDRESS = 0x8000;
+export const TILE_MAP0_ADDRESS = 0x9800;
+export const TILE_MAP1_ADDRESS = 0x9c00;
+export const OAM_ADDRESS = 0xfe00;
 
 export const KEY_MAPPING: { [key: string]: number } = {
   '1': 1,

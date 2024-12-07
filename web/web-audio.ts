@@ -1,4 +1,4 @@
-import { Audio } from '../lib/vm-runner';
+import { Audio } from '../lib/gameboy-emulator.js';
 
 export class WebAudio implements Audio {
   oscillator: OscillatorNode | undefined;

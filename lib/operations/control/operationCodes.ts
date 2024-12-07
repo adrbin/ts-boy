@@ -1,5 +1,5 @@
-import { Flag } from '../../registers';
-import { buildOperationCodeMap, OperationCode } from '../operation';
+import { Flag } from '../../registers.js';
+import { buildOperationCodeMap, OperationCode } from '../operation.js';
 import {
   jumpRelativeWithCondition,
   returnWithCondition,
@@ -9,7 +9,7 @@ import {
   jumpFromHl,
   reset,
   callWithCondition,
-} from './operationInfos';
+} from './operationInfos.js';
 
 const operationCodes: OperationCode[] = [
   {
@@ -69,11 +69,11 @@ const operationCodes: OperationCode[] = [
     operationInfo: jumpWithCondition(_ => true),
   },
   {
-    opcode: 0xc8,
+    opcode: 0xca,
     operationInfo: jumpWithCondition(flags => flags[Flag.Zero]),
   },
   {
-    opcode: 0xd8,
+    opcode: 0xda,
     operationInfo: jumpWithCondition(flags => flags[Flag.Carry]),
   },
   {

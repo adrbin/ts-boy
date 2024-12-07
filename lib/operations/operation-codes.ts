@@ -1,11 +1,11 @@
-import alu8Operations from './alu8/operationCodes';
-import alu16Operations from './alu16/operationCodes';
-import controlOperations from './control/operationCodes';
-import load8Operations from './load8/operationCodes';
-import load16Operations from './load16/operationCodes';
-import { OperationCode } from './operation';
-import otherOperations from './other/operationCodes';
-import rotateOperations from './rotate/operationCodes';
+import alu8Operations from './alu8/operationCodes.js';
+import alu16Operations from './alu16/operationCodes.js';
+import controlOperations from './control/operationCodes.js';
+import load8Operations from './load8/operationCodes.js';
+import load16Operations from './load16/operationCodes.js';
+import { OperationCode } from './operation.js';
+import otherOperations from './other/operationCodes.js';
+import rotateOperations from './rotate/operationCodes.js';
 
 const operationCodesMap = new Map<number, OperationCode>();
 
@@ -20,6 +20,10 @@ const operationCodes = [
 ];
 
 for (const [opcode, operationCode] of operationCodes) {
+  if (operationCodesMap.get(opcode)) {
+    throw new Error(`Opcode ${opcode} already has been registered.`);
+  }
+
   operationCodesMap.set(opcode, operationCode);
 }
 

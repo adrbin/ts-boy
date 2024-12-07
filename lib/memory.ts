@@ -1,8 +1,8 @@
 import {
   BGP_ADDRESS,
   LCD_CONTROL_ADDRESS,
-  LYC_ADDRESS,
   LY_ADDRESS,
+  LYC_ADDRESS,
   OBP0_ADDRESS,
   OBP1_ADDRESS,
   SCX_ADDRESS,
@@ -10,10 +10,10 @@ import {
   STAT_ADDRESS,
   WX_ADDRESS,
   WY_ADDRESS,
-} from './constants';
-import { IMemorySegment, MemorySegment } from './memory-segment';
-import { MemorySegmentMirror } from './memory-segment-mirror';
-import { getEnumValues, getEnumValuesToFlagObject, setNthBit } from './utils';
+} from './constants.js';
+import { IMemorySegment, MemorySegment } from './memory-segment.js';
+import { MemorySegmentMirror } from './memory-segment-mirror.js';
+import { getByteToFlagsObject, setByteFromFlagsObject } from './utils.js';
 
 export enum LcdControl {
   BgEnable = 0,
@@ -43,12 +43,12 @@ export type Stats = Record<Stat, boolean>;
 export class Memory {
   isBiosLoaded = true;
   bios: MemorySegment;
-  rom = new MemorySegment(0, 0x8000);
+  rom: MemorySegment;
   #vram = new MemorySegment(0x8000, 0x2000);
   #eram = new MemorySegment(0xa000, 0x2000);
-  #wram = new MemorySegment(0xa000, 0x2000);
+  #wram = new MemorySegment(0xc000, 0x2000);
   #echoram = new MemorySegmentMirror(0xe000, 0x1e00, this.#wram);
-  #oam = new MemorySegment(0xe000, 0x1e00);
+  #oam = new MemorySegment(0xfe00, 0x100);
   #io = new MemorySegment(0xff00, 0x80);
   #hram = new MemorySegment(0xff80, 0x80);
 
@@ -87,36 +87,27 @@ export class Memory {
 
   setWord(address: number, value: number) {
     const memorySegment = this.#getMemorySegment(address);
-    memorySegment.setWordAbsolute(address, value);
+    memorySegment.setWordRelative(address, value);
   }
 
   getLcdControls() {
     const byte = this.getByte(LCD_CONTROL_ADDRESS);
-    const lcdControls = getEnumValuesToFlagObject<LcdControls>(
-      LcdControl,
-      byte,
-    );
+    const lcdControls = getByteToFlagsObject<LcdControls>(LcdControl, byte);
 
     return lcdControls;
   }
 
   getStats() {
     const byte = this.getByte(STAT_ADDRESS);
-    const stats = getEnumValuesToFlagObject<Stats>(Stat, byte);
+    const stats = getByteToFlagsObject<Stats>(Stat, byte);
     return stats;
   }
 
   setStats(flags: Partial<Stats>) {
     let byte = this.getByte(STAT_ADDRESS);
+    const newByte = setByteFromFlagsObject(flags, byte);
 
-    for (const flag of getEnumValues(Stat)) {
-      const value = flags[flag];
-      if (value !== undefined) {
-        byte = setNthBit(byte, flag, value);
-      }
-    }
-
-    this.setByte(STAT_ADDRESS, byte);
+    this.setByte(STAT_ADDRESS, newByte);
   }
 
   get scy() {
@@ -144,7 +135,7 @@ export class Memory {
   }
 
   get lyc() {
-    return this.getByte(LY_ADDRESS);
+    return this.getByte(LYC_ADDRESS);
   }
 
   get bgp() {
@@ -175,10 +166,11 @@ export class Memory {
       throw new Error(`Out of memory address: ${address}`);
     }
 
-    if (memorySegment === this.bios && !this.isBiosLoaded) {
-      memorySegment = this.rom;
-    }
-
     return memorySegment;
+  }
+
+  unloadBios() {
+    this.isBiosLoaded = false;
+    this.#memorySegments = this.#memorySegments.slice(1);
   }
 }

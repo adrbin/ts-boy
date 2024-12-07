@@ -1,5 +1,5 @@
-import { Register8 } from '../../registers';
-import { buildOperationCodeMap, OperationCode } from '../operation';
+import { Register8 } from '../../registers.js';
+import { buildOperationCodeMap, OperationCode } from '../operation.js';
 import {
   shiftLeftRegister8,
   ShiftMode,
@@ -12,7 +12,7 @@ import {
   testBitOfHlAddress,
   setBitOfRegister8,
   setBitOfHlAddress,
-} from './operationInfos';
+} from './operationInfos.js';
 
 const operationCodes: OperationCode[] = [
   {
@@ -499,7 +499,7 @@ const operationCodes: OperationCode[] = [
   },
   {
     opcode: 0x6e,
-    operationInfo: testBitOfHlAddress(4),
+    operationInfo: testBitOfHlAddress(5),
   },
   {
     opcode: 0x6f,

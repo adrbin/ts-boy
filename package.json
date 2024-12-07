@@ -4,14 +4,13 @@
   "description": "Gameboy emulator in TypeScript",
   "type": "module",
   "scripts": {
-    "start": "parcel",
-    "build": "parcel build"
+    "start": "http-server -c-1",
+    "build": "mkdir -p dist && cp static/* dist && cp -r roms dist && tsc"
   },
   "author": "adrbin",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
-    "@parcel/packager-raw-url": "^2.8.2",
-    "@parcel/transformer-webmanifest": "^2.8.2",
-    "parcel": "^2.8.2"
+    "http-server": "^14.1.1",
+    "typescript": "^5.7.2"
   }
 }

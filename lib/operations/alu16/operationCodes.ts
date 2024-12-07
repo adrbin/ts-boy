@@ -1,12 +1,12 @@
-import { Register16 } from '../../registers';
-import { buildOperationCodeMap, OperationCode } from '../operation';
+import { Register16 } from '../../registers.js';
+import { buildOperationCodeMap, OperationCode } from '../operation.js';
 import {
   incrementRegister16,
   addRegister16ToHl,
   decrementRegister16,
   addByteToSp,
   loadHlFromSpWithByte,
-} from './operationInfos';
+} from './operationInfos.js';
 
 const operationCodes: OperationCode[] = [
   {
@@ -58,7 +58,7 @@ const operationCodes: OperationCode[] = [
     operationInfo: decrementRegister16(Register16.SP),
   },
   {
-    opcode: 0xe9,
+    opcode: 0xe8,
     operationInfo: addByteToSp,
   },
   {

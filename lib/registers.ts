@@ -1,16 +1,14 @@
 import {
-  getEnumValues,
+  getByteToFlagsObject,
   getHigherByte,
   getLowerByte,
-  getNthBit,
-  getNthBitFlag,
   isByte,
   isWord,
   joinBytes,
-  setNthBit,
+  setByteFromFlagsObject,
   toByte,
   toWord,
-} from './utils';
+} from './utils.js';
 
 export enum Register8 {
   A = 'A',
@@ -93,6 +91,8 @@ export class Registers {
     const newByte = toByte(byte + increment);
 
     this.setByte(register8, newByte);
+
+    return newByte;
   }
 
   decrementByte(register8: Register8, decrement = 1) {
@@ -100,6 +100,8 @@ export class Registers {
     const newByte = toByte(currentByte - decrement);
 
     this.setByte(register8, newByte);
+
+    return newByte;
   }
 
   getWord(register16: Register16) {
@@ -125,8 +127,8 @@ export class Registers {
     }
 
     const registers = registerMapping[register16 as Register16Combined];
-    this.#registers8[registers[0]] = getLowerByte(word);
-    this.#registers8[registers[1]] = getHigherByte(word);
+    this.#registers8.set(registers[0], getLowerByte(word));
+    this.#registers8.set(registers[1], getHigherByte(word));
   }
 
   setRegister16(targetRegister16: Register16, sourceRegister16: Register16) {
@@ -139,6 +141,8 @@ export class Registers {
     const newWord = toWord(currentWord + increment);
 
     this.setWord(register16, newWord);
+
+    return newWord;
   }
 
   decrementWord(register16: Register16, decrement = 1) {
@@ -146,30 +150,22 @@ export class Registers {
     const newWord = toWord(currentWord - decrement);
 
     this.setWord(register16, newWord);
+
+    return newWord;
   }
 
   getFlags(): Flags {
     const f = this.getByte(Register8.F);
-
-    const flags = getEnumValues(Flag).reduce((acc, flag) => {
-      acc[flag] = getNthBitFlag(f, flag);
-      return acc;
-    }, {} as Flags);
+    const flags = getByteToFlagsObject<Flags>(Flag, f);
 
     return flags;
   }
 
   setFlags(flags: Partial<Flags>) {
-    let f = this.getByte(Register8.F);
+    let byte = this.getByte(Register8.F);
+    const newByte = setByteFromFlagsObject(flags, byte);
 
-    for (const flag of getEnumValues(Flag)) {
-      const value = flags[flag];
-      if (value !== undefined) {
-        f = setNthBit(f, flag, value);
-      }
-    }
-
-    this.setByte(Register8.F, f);
+    this.setByte(Register8.F, newByte);
   }
 
   #checkByte(register8: Register8, value: number) {

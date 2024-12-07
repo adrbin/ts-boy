@@ -1,22 +1,28 @@
-import { GameboyEmulator } from '../lib/gameboy-emulator';
-import { WebAudio } from './web-audio';
-import { WebKeyboardInput } from './web-keyboard-input';
-import { WebRenderer } from './web-renderer';
-import { WebStorage } from './web-storage';
-import { WebButtonInput } from './web-button-input';
-import { CombinedInput } from '../lib/combined-input';
-import { KEY_MAPPING, ROMS } from '../lib/constants';
-import { toHex } from '../lib/utils';
-import { VmRunner } from '../lib/vm-runner';
+import { GameboyEmulator } from '../lib/gameboy-emulator.js';
+import { WebRenderer } from './web-renderer.js';
+import {
+  DISPLAY_HEIGHT,
+  DISPLAY_WIDTH,
+  FRAME_LENGTH,
+  FRAME_LENGTH_IN_M,
+  KEY_MAPPING,
+  ROMS,
+} from '../lib/constants.js';
+import { GameboyCpu } from '../lib/gameboy-cpu.js';
+import { Memory } from '../lib/memory.js';
+import { Clock } from '../lib/clock.js';
+import { GameboyGpu } from '../lib/gameboy-gpu.js';
+import { ClockData } from '../lib/clock-data.js';
 
 const PAUSE_TEXT = 'Pause';
 const RESUME_TEXT = 'Resume';
 
-let vmRunner: VmRunner;
-let canvas: HTMLCanvasElement;
+let gameboyEmulator: GameboyEmulator;
+let dataCanvas: HTMLCanvasElement;
+let gameCanvas: HTMLCanvasElement;
 const buttons: Record<string, HTMLButtonElement> = {};
 let romSelect: HTMLSelectElement;
-const romCache: Record<string, Uint8Array> = {};
+const romCache: Map<string, Uint8Array> = new Map();
 let romFileInput: HTMLInputElement;
 let modeSelect: HTMLSelectElement;
 let fpsCheckbox: HTMLInputElement;
@@ -24,53 +30,55 @@ let fpsText: HTMLElement;
 let pauseButton: HTMLButtonElement;
 
 async function main() {
-  if (vmRunner) {
-    await vmRunner.stop();
+  if (gameboyEmulator) {
+    await gameboyEmulator.stop();
   }
 
-  const rom = (romSelect[romSelect.selectedIndex] as HTMLOptionElement).value;
+  const romName = (romSelect[romSelect.selectedIndex] as HTMLOptionElement)
+    .value;
 
-  const isChip8mode =
-    (modeSelect[modeSelect.selectedIndex] as HTMLOptionElement).text ===
-    'Chip-8';
+  const renderer = new WebRenderer({ dataCanvas, gameCanvas });
 
-  const renderer = new WebRenderer({
-    canvas,
-    shouldLimitFrame: isChip8mode,
-    shouldDrawFps: fpsCheckbox.checked,
-    fpsText,
+  const rom = await getRom(romName);
+
+  const biosResponse = await fetch('../lib/dmg_boot.bin');
+  const biosBuffer = await biosResponse.arrayBuffer();
+  const bios = new Uint8Array(biosBuffer);
+
+  const memory = new Memory(bios, rom);
+
+  const clock = new Clock(new ClockData(), FRAME_LENGTH_IN_M);
+
+  const cpu = new GameboyCpu({ memory, clock });
+
+  const gpu = new GameboyGpu({ imageData: renderer.image.data, memory, clock });
+
+  gameboyEmulator = new GameboyEmulator({
+    cpu,
+    gpu,
+    clock,
+    renderer,
   });
 
-  const keyboardInput = new WebKeyboardInput();
-  const buttonInput = new WebButtonInput(buttons);
-  const combinedInput = new CombinedInput(keyboardInput, buttonInput);
-  const audio = new WebAudio();
-  const storage = new WebStorage(`${rom}.state`);
+  // gpu.reset();
+  // renderer.draw();
 
-  const program = await getRomFromCache(rom);
-
-  const vm = new GameboyEmulator({
-    program,
-    input: combinedInput,
-    logger: console,
-    storage,
-  });
-
-  vmRunner = new VmRunner({ vm, renderer, audio });
-
-  await vmRunner.run();
+  await gameboyEmulator.run();
 }
 
 function initUi() {
-  canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-  if (!canvas) {
+  dataCanvas = document.createElement('canvas');
+  dataCanvas.width = DISPLAY_WIDTH;
+  dataCanvas.height = DISPLAY_HEIGHT;
+
+  gameCanvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+  if (!gameCanvas) {
     throw new Error('There is no canvas to render the game');
   }
 
-  for (const keyNumber of Object.values(KEY_MAPPING)) {
-    const key = toHex(keyNumber);
+  for (const key of Object.values(KEY_MAPPING)) {
     const button = document.getElementById(
-      `button-${key}`,
+      `${key}-button`,
     ) as HTMLButtonElement;
     if (!button) {
       throw new Error(`Input button '${key}' has not been found`);
@@ -79,9 +87,9 @@ function initUi() {
     buttons[key] = button;
   }
 
-  const startButton = document.getElementById('start-button');
-  if (!startButton) {
-    throw new Error(`Start button has not been found`);
+  const runButton = document.getElementById('run-button');
+  if (!runButton) {
+    throw new Error(`Run button has not been found`);
   }
 
   romSelect = document.getElementById('rom-select') as HTMLSelectElement;
@@ -96,7 +104,7 @@ function initUi() {
     romSelect.appendChild(option);
   }
 
-  startButton.addEventListener('click', main);
+  runButton.addEventListener('click', main);
 
   romFileInput = document.getElementById('rom-file-input') as HTMLInputElement;
   if (!romFileInput) {
@@ -134,15 +142,15 @@ async function loadRom() {
   if (!romFileInput.files || !romFileInput.files[0]) {
     return;
   }
-  const file = romFileInput.files[0];
-  const programBuffer = await file.arrayBuffer();
-  const program = new Uint8Array(programBuffer);
-  const rom = file.name;
-  romCache[rom] = program;
+  const romFile = romFileInput.files[0];
+  const romBuffer = await romFile.arrayBuffer();
+  const rom = new Uint8Array(romBuffer);
+  const romName = romFile.name;
+  romCache.set(romName, rom);
 
   const option = document.createElement('option');
-  option.value = rom;
-  option.text = getRomName(rom);
+  option.value = romName;
+  option.text = getRomName(romName);
   option.selected = true;
   romSelect.appendChild(option);
 }
@@ -150,17 +158,16 @@ async function loadRom() {
 async function pauseRom() {
   if (pauseButton.textContent === PAUSE_TEXT) {
     pauseButton.innerText = RESUME_TEXT;
-    await vmRunner.stop();
+    await gameboyEmulator.stop();
   } else {
     pauseButton.innerText = PAUSE_TEXT;
-    await vmRunner.run();
+    await gameboyEmulator.run();
   }
 }
 
 function drawFps() {
-  const renderer = vmRunner.renderer as WebRenderer;
+  const renderer = gameboyEmulator.renderer as WebRenderer;
   renderer.shouldDrawFps = fpsCheckbox.checked;
-  renderer.shouldRedraw = true;
 }
 
 function getRomName(rom: string) {
@@ -174,18 +181,18 @@ function getRomName(rom: string) {
   return rom.substring(start, end);
 }
 
-async function getRomFromCache(rom: string) {
-  const cachedProgram = romCache[rom];
-  if (cachedProgram) {
-    return cachedProgram;
+async function getRom(romName: string) {
+  const cachedRom = romCache.get(romName);
+  if (cachedRom) {
+    return cachedRom;
   }
 
-  const programResponse = await fetch(rom);
-  const programBuffer = await programResponse.arrayBuffer();
-  const program = new Uint8Array(programBuffer);
-  romCache[rom] = program;
+  const romResponse = await fetch(romName);
+  const romBuffer = await romResponse.arrayBuffer();
+  const rom = new Uint8Array(romBuffer);
+  romCache.set(romName, rom);
 
-  return program;
+  return rom;
 }
 
 initUi();

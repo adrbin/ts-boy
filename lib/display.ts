@@ -1,5 +1,5 @@
-import { BitArray } from './bit-array';
-import { mod } from './utils';
+import { BitArray } from './bit-array.js';
+import { mod } from './utils.js';
 
 export class Display {
   width: number;

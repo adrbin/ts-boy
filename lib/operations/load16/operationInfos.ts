@@ -1,7 +1,7 @@
-import { ClockData } from '../../clock-data';
-import { GameboyCpu } from '../../gameboy-cpu';
-import { Register16, Register8 } from '../../registers';
-import { OperationInfo } from '../operation';
+import { ClockData } from '../../clock-data.js';
+import { GameboyCpu } from '../../gameboy-cpu.js';
+import { Register16, Register8 } from '../../registers.js';
+import { OperationInfo } from '../operation.js';
 
 export const loadRegister16FromWord = (
   register16: Register16,

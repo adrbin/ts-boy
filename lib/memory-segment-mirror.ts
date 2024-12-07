@@ -1,4 +1,4 @@
-import { IMemorySegment } from './memory-segment';
+import { IMemorySegment } from './memory-segment.js';
 
 export class MemorySegmentMirror implements IMemorySegment {
   start: number;

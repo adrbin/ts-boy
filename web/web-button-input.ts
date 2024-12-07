@@ -1,10 +1,10 @@
-import { Input } from '../lib/gameboy-emulator';
-import { INPUT_DELAY, KEY_MAPPING } from '../lib/constants';
-import { delay } from '../lib/utils';
+import { Input } from '../lib/gameboy-emulator.js';
+import { INPUT_DELAY, KEY_MAPPING } from '../lib/constants.js';
+import { delay } from '../lib/utils.js';
 
 export class WebButtonInput implements Input {
   buttons: Record<string, HTMLButtonElement>;
-  pressedKeys = new Set<number>();
+  pressedKeys = new Set<string>();
   waitListeners: Record<string, () => void> = {};
 
   constructor(buttons: Record<string, HTMLButtonElement>) {
@@ -13,23 +13,21 @@ export class WebButtonInput implements Input {
     for (const key of Object.keys(buttons)) {
       const button = buttons[key];
       const onStart = () => {
-        const pressedKey = parseInt(key, 16);
-        if (!isValidKey(pressedKey)) {
+        if (!isValidKey(key)) {
           return;
         }
 
-        this.pressedKeys.add(pressedKey);
+        this.pressedKeys.add(key);
       };
 
       const onEnd = async () => {
-        const pressedKey = parseInt(key, 16);
-        if (!isValidKey(pressedKey)) {
+        if (!isValidKey(key)) {
           return;
         }
 
         await delay(INPUT_DELAY);
 
-        this.pressedKeys.delete(pressedKey);
+        this.pressedKeys.delete(key);
       };
 
       button.addEventListener('touchstart', onStart);
@@ -45,40 +43,8 @@ export class WebButtonInput implements Input {
   getInput() {
     return this.pressedKeys;
   }
-
-  waitInput() {
-    return new Promise<number>(resolve => {
-      this.waitListeners = {};
-      for (const key of Object.keys(this.buttons)) {
-        const button = this.buttons[key];
-        const listener = () => {
-          const pressedKey = parseInt(key, 16);
-          if (!isValidKey(pressedKey)) {
-            return;
-          }
-
-          this.cancelWait();
-          resolve(pressedKey);
-        };
-        this.waitListeners[key] = listener;
-        button.addEventListener('touchstart', listener);
-        button.addEventListener('mousedown', listener);
-      }
-    });
-  }
-
-  cancelWait() {
-    for (const key of Object.keys(this.waitListeners)) {
-      const button = this.buttons[key];
-      const listener = this.waitListeners[key];
-      button.removeEventListener('touchstart', listener);
-      button.removeEventListener('mousedown', listener);
-    }
-
-    this.waitListeners = {};
-  }
 }
 
-function isValidKey(pressedKey: number) {
-  return Object.values(KEY_MAPPING).includes(pressedKey);
+function isValidKey(key: string) {
+  return Object.values(KEY_MAPPING).includes(key);
 }

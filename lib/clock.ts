@@ -1,35 +1,40 @@
-import { ClockData } from './clock-data';
+import { ClockData } from './clock-data.js';
 
 export class Clock {
-  clockData: ClockData;
-  didReset = false;
+  #clockData: ClockData;
+  hasReset = false;
   max?: number;
 
   constructor(clockData = new ClockData(), max?: number) {
-    this.clockData = clockData;
+    this.#clockData = clockData;
     this.max = max;
   }
 
-  get value() {
-    return this.clockData.m;
+  get m() {
+    return this.#clockData.m;
   }
 
-  set value(value: number) {
-    this.clockData.m = value;
+  get t() {
+    return this.#clockData.t;
+  }
+
+  set m(value: number) {
+    this.#clockData.m = value;
   }
 
   reset() {
-    this.clockData.m = 0;
+    this.m = 0;
   }
 
   increment(clock: ClockData) {
-    this.clockData.m += clock.m;
+    this.m += clock.m;
 
-    if (this.max !== undefined && this.value >= this.max) {
-      this.value %= this.max;
-      this.didReset = true;
+    if (this.max !== undefined && this.m >= this.max) {
+      this.m %= this.max;
+      this.hasReset = true;
+      return;
     }
 
-    this.didReset = false;
+    this.hasReset = false;
   }
 }

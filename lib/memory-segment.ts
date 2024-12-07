@@ -4,7 +4,7 @@ import {
   isByte,
   isWord,
   joinBytes,
-} from './utils';
+} from './utils.js';
 
 export interface IMemorySegment {
   start: number;
@@ -81,7 +81,7 @@ export class MemorySegment implements IMemorySegment {
     this.#checkMemoryBounds(address);
     this.#checkByte(address, value);
 
-    this.#array[address] = value && 0xff;
+    this.#array[address] = value & 0xff;
   }
 
   setWordAbsolute(address: number, value: number) {

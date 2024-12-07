@@ -1,7 +1,7 @@
-import { ClockData } from '../../clock-data';
-import { GameboyCpu } from '../../gameboy-cpu';
-import { Register16, Register8 } from '../../registers';
-import { OperationInfo } from '../operation';
+import { ClockData } from '../../clock-data.js';
+import { GameboyCpu } from '../../gameboy-cpu.js';
+import { Register16, Register8 } from '../../registers.js';
+import { OperationInfo } from '../operation.js';
 
 export const loadHlAddressWithIncrementFromA: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
@@ -17,7 +17,7 @@ export const loadHlAddressWithIncrementFromA: OperationInfo = {
 export const loadHlAddressWithDecrementFromA: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
     const hlAddress = cpu.registers.getWord(Register16.HL);
-    cpu.registers.decrementWord(Register16.HL, -1);
+    cpu.registers.decrementWord(Register16.HL);
     const a = cpu.registers.getByte(Register8.A);
     cpu.memory.setByte(hlAddress, a);
   },

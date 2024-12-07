@@ -1,14 +1,14 @@
-import { ClockData } from '../../clock-data';
-import { GameboyCpu } from '../../gameboy-cpu';
-import { Flag, Register16, Register8 } from '../../registers';
+import { ClockData } from '../../clock-data.js';
+import { GameboyCpu } from '../../gameboy-cpu.js';
+import { Flag, Register16, Register8 } from '../../registers.js';
 import {
   hasByteSumCarry,
   hasByteSumHalfCarry,
-  isSumZero,
+  isByteSumZero,
   toByte,
   toNibble,
-} from '../../utils';
-import { OperationInfo } from '../operation';
+} from '../../utils.js';
+import { OperationInfo } from '../operation.js';
 
 export const incrementRegister8 = (register8: Register8): OperationInfo => {
   return {
@@ -66,7 +66,7 @@ export const decrementHlAddress: OperationInfo = {
 
 const setIncrementFlags = (cpu: GameboyCpu, byte: number) => {
   const flags = {
-    [Flag.Zero]: isSumZero(byte, 1),
+    [Flag.Zero]: isByteSumZero(byte, 1),
     [Flag.Negative]: false,
     [Flag.HalfCarry]: hasByteSumHalfCarry(byte, 1),
   };
@@ -76,7 +76,7 @@ const setIncrementFlags = (cpu: GameboyCpu, byte: number) => {
 
 const setDecrementFlags = (cpu: GameboyCpu, byte: number) => {
   const flags = {
-    [Flag.Zero]: isSumZero(byte, -1),
+    [Flag.Zero]: isByteSumZero(byte, -1),
     [Flag.Negative]: true,
     [Flag.HalfCarry]: hasByteSumHalfCarry(byte, -1),
   };
@@ -258,7 +258,7 @@ const setAddSubtractFlags = (
   negativeFlag: boolean,
 ) => {
   const flags = {
-    [Flag.Zero]: isSumZero(a, byte, carry),
+    [Flag.Zero]: isByteSumZero(a, byte, carry),
     [Flag.Negative]: negativeFlag,
     [Flag.HalfCarry]: hasByteSumHalfCarry(a, byte, carry),
     [Flag.Carry]: hasByteSumCarry(a, byte, carry),
@@ -380,7 +380,7 @@ const setAddSubtractAFlags = (
   negativeFlag: boolean,
 ) => {
   const flags = {
-    [Flag.Zero]: isSumZero(a, byte, carry),
+    [Flag.Zero]: isByteSumZero(a, byte, carry),
     [Flag.Negative]: negativeFlag,
     [Flag.HalfCarry]: hasByteSumHalfCarry(a, byte, carry),
     [Flag.Carry]: hasByteSumCarry(a, byte, carry),

@@ -1,38 +1,81 @@
-import { Clock } from '../lib/clock';
-import { DISPLAY_HEIGHT, DISPLAY_WIDTH, RGBA_SIZE } from '../lib/constants';
-import { Display } from '../lib/display';
-import { Renderer } from '../lib/gameboy-emulator';
+import {
+  DISPLAY_HEIGHT,
+  DISPLAY_WIDTH,
+  ONE_SECOND_IN_MS,
+} from '../lib/constants.js';
+import { Renderer } from '../lib/gameboy-emulator.js';
 
 export interface WebRendererParams {
-  canvas: HTMLCanvasElement;
+  dataCanvas: HTMLCanvasElement;
+  gameCanvas: HTMLCanvasElement;
+  fpsText?: HTMLElement;
 }
 
 export class WebRenderer implements Renderer {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  y = 0;
+  #dataCanvas: HTMLCanvasElement;
+  #gameCanvas: HTMLCanvasElement;
+  #dataCtx: CanvasRenderingContext2D;
+  #gameCtx: CanvasRenderingContext2D;
   image: ImageData;
 
-  constructor({ canvas }: WebRendererParams) {
-    this.canvas = canvas;
+  shouldDrawFps = false;
+  #fpsText?: HTMLElement;
+  #fpsTimestamp = Date.now();
+  #fpsCounter = 0;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
+  constructor({ dataCanvas, gameCanvas }: WebRendererParams) {
+    this.#dataCanvas = dataCanvas;
+    this.#gameCanvas = gameCanvas;
+
+    const dataCtx = dataCanvas.getContext('2d');
+    if (!dataCtx) {
       throw new Error('Canvas is uninitialized.');
     }
-    this.ctx = ctx;
-    this.image = this.ctx.createImageData(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-    this.reset();
+    this.#dataCtx = dataCtx;
+
+    const gameCtx = gameCanvas.getContext('2d');
+    if (!gameCtx) {
+      throw new Error('Canvas is uninitialized.');
+    }
+    this.#gameCtx = gameCtx;
+
+    this.image = this.#dataCtx.createImageData(DISPLAY_WIDTH, DISPLAY_HEIGHT);
   }
 
-  init: () => void | Promise<void>;
-  draw() {}
+  draw() {
+    this.#dataCtx.putImageData(this.image, 0, 0);
+    this.#gameCtx.drawImage(
+      this.#dataCanvas,
+      0,
+      0,
+      this.#gameCanvas.width,
+      this.#gameCanvas.height,
+    );
 
-  reset() {
-    for (let i = 0; i < this.image.width * this.image.height * RGBA_SIZE; i++) {
-      this.image.data[i] = 0;
+    this.#drawFps();
+  }
+
+  #drawFps() {
+    if (!this.shouldDrawFps) {
+      return;
     }
 
-    this.ctx.putImageData(this.image, 0, 0);
+    this.#fpsCounter++;
+
+    const now = Date.now();
+    const timeDifference = now - this.#fpsTimestamp;
+
+    if (timeDifference < ONE_SECOND_IN_MS) {
+      return;
+    }
+
+    this.#fpsText!.textContent = this.#formattedFpsCounter;
+
+    this.#fpsTimestamp = now;
+    this.#fpsCounter = 0;
+  }
+
+  get #formattedFpsCounter() {
+    return this.#fpsCounter.toString().padStart(2, '0');
   }
 }

@@ -1,6 +1,6 @@
-import { ClockData } from '../../clock-data';
-import { GameboyCpu } from '../../gameboy-cpu';
-import { Flag, Register16, Register8 } from '../../registers';
+import { ClockData } from '../../clock-data.js';
+import { GameboyCpu } from '../../gameboy-cpu.js';
+import { Flag, Register16, Register8 } from '../../registers.js';
 import {
   getHigherNibble,
   getLowerByte,
@@ -8,8 +8,8 @@ import {
   joinNibbles,
   setNthBit,
   toByte,
-} from '../../utils';
-import { OperationInfo } from '../operation';
+} from '../../utils.js';
+import { OperationInfo } from '../operation.js';
 
 export enum ShiftMode {
   Logical,

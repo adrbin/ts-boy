@@ -1,4 +1,4 @@
-import { Input } from './gameboy-emulator';
+import { Input } from './gameboy-emulator.js';
 
 export class CombinedInput implements Input {
   inputs: Input[];
@@ -8,7 +8,7 @@ export class CombinedInput implements Input {
   }
 
   getInput() {
-    const result = new Set<number>();
+    const result = new Set<string>();
     for (const input of this.inputs) {
       const inputResult = input.getInput();
       for (const key of inputResult) {
@@ -17,21 +17,5 @@ export class CombinedInput implements Input {
     }
 
     return result;
-  }
-
-  async waitInput() {
-    const promises = this.inputs.map(input => input.waitInput());
-    const result = await Promise.any(promises);
-    for (const input of this.inputs) {
-      input.cancelWait();
-    }
-
-    return result;
-  }
-
-  cancelWait() {
-    for (const input of this.inputs) {
-      input.cancelWait();
-    }
   }
 }

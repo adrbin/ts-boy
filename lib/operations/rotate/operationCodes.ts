@@ -1,5 +1,5 @@
-import { buildOperationCodeMap, OperationCode } from '../operation';
-import { rotateLeftA, RotateMode, rotateRightA } from './operationInfos';
+import { buildOperationCodeMap, OperationCode } from '../operation.js';
+import { rotateLeftA, RotateMode, rotateRightA } from './operationInfos.js';
 
 const operationCodes: OperationCode[] = [
   {
@@ -7,15 +7,15 @@ const operationCodes: OperationCode[] = [
     operationInfo: rotateLeftA(RotateMode.Normal),
   },
   {
-    opcode: 0x0e,
-    operationInfo: rotateRightA(RotateMode.Normal),
-  },
-  {
     opcode: 0x17,
     operationInfo: rotateLeftA(RotateMode.ThroughCarry),
   },
   {
-    opcode: 0x1e,
+    opcode: 0x0f,
+    operationInfo: rotateRightA(RotateMode.Normal),
+  },
+  {
+    opcode: 0x1f,
     operationInfo: rotateRightA(RotateMode.ThroughCarry),
   },
 ];

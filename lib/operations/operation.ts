@@ -1,5 +1,5 @@
-import { ClockData } from '../clock-data';
-import { GameboyCpu } from '../gameboy-cpu';
+import { ClockData } from '../clock-data.js';
+import { GameboyCpu } from '../gameboy-cpu.js';
 
 export type OperationCallback = (cpu: GameboyCpu) => void;
 
@@ -17,7 +17,14 @@ export interface OperationInfo {
 
 export const buildOperationCodeMap = (operationCodes: OperationCode[]) => {
   const operationCodesMap = new Map<number, OperationCode>();
+
   for (const operationCode of operationCodes) {
+    if (operationCodesMap.get(operationCode.opcode)) {
+      throw new Error(
+        `Opcode ${operationCode.opcode} already has been registered.`,
+      );
+    }
+
     operationCodesMap.set(operationCode.opcode, operationCode);
   }
 

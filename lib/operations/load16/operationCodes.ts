@@ -1,5 +1,5 @@
-import { Register16 } from '../../registers';
-import { buildOperationCodeMap, OperationCode } from '../operation';
+import { Register16 } from '../../registers.js';
+import { buildOperationCodeMap, OperationCode } from '../operation.js';
 import {
   loadRegister16FromWord,
   loadRegister16AddressFromA,
@@ -7,7 +7,7 @@ import {
   popToRegister16,
   pushFromRegister16,
   loadSpFromHl,
-} from './operationInfos';
+} from './operationInfos.js';
 
 const operationCodes: OperationCode[] = [
   {
@@ -43,15 +43,15 @@ const operationCodes: OperationCode[] = [
     operationInfo: popToRegister16(Register16.BC),
   },
   {
-    opcode: 0xc2,
+    opcode: 0xd1,
     operationInfo: popToRegister16(Register16.DE),
   },
   {
-    opcode: 0xc3,
+    opcode: 0xe1,
     operationInfo: popToRegister16(Register16.HL),
   },
   {
-    opcode: 0xc4,
+    opcode: 0xf1,
     operationInfo: popToRegister16(Register16.AF),
   },
   {
@@ -63,11 +63,11 @@ const operationCodes: OperationCode[] = [
     operationInfo: pushFromRegister16(Register16.DE),
   },
   {
-    opcode: 0xd5,
+    opcode: 0xe5,
     operationInfo: pushFromRegister16(Register16.HL),
   },
   {
-    opcode: 0xd5,
+    opcode: 0xf5,
     operationInfo: pushFromRegister16(Register16.AF),
   },
   {

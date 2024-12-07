@@ -1,6 +1,6 @@
-import { ClockData } from '../../clock-data';
-import { GameboyCpu } from '../../gameboy-cpu';
-import { Flag, Register16 } from '../../registers';
+import { ClockData } from '../../clock-data.js';
+import { GameboyCpu } from '../../gameboy-cpu.js';
+import { Flag, Register16 } from '../../registers.js';
 import {
   hasByteSumCarry,
   hasByteSumHalfCarry,
@@ -8,8 +8,8 @@ import {
   hasWordSumHalfCarry,
   toSignedByte,
   toWord,
-} from '../../utils';
-import { OperationInfo } from '../operation';
+} from '../../utils.js';
+import { OperationInfo } from '../operation.js';
 
 export const incrementRegister16 = (register16: Register16): OperationInfo => {
   return {

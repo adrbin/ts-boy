@@ -1,8 +1,8 @@
-import { ClockData } from '../../clock-data';
-import { GameboyCpu } from '../../gameboy-cpu';
-import { Flag, Register8 } from '../../registers';
-import { getNthBit, toByte } from '../../utils';
-import { OperationInfo } from '../operation';
+import { ClockData } from '../../clock-data.js';
+import { GameboyCpu } from '../../gameboy-cpu.js';
+import { Flag, Register8 } from '../../registers.js';
+import { getNthBit, toByte } from '../../utils.js';
+import { OperationInfo } from '../operation.js';
 
 export enum RotateMode {
   Normal,

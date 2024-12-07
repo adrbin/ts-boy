@@ -1,5 +1,5 @@
-import { Register16, Register8 } from '../../registers';
-import { buildOperationCodeMap, OperationCode } from '../operation';
+import { Register16, Register8 } from '../../registers.js';
+import { buildOperationCodeMap, OperationCode } from '../operation.js';
 import {
   loadHlAddressWithIncrementFromA,
   loadHlAddressWithDecrementFromA,
@@ -17,7 +17,7 @@ import {
   loadAFromIoAddressWithCOffset,
   loadAddressFromA,
   loadAFromAddress,
-} from './operationInfos';
+} from './operationInfos.js';
 
 const operationCodes: OperationCode[] = [
   {
@@ -106,7 +106,7 @@ const operationCodes: OperationCode[] = [
   },
   {
     opcode: 0x47,
-    operationInfo: loadRegister8FromRegister8(Register8.C, Register8.A),
+    operationInfo: loadRegister8FromRegister8(Register8.B, Register8.A),
   },
   {
     opcode: 0x48,

@@ -1,4 +1,4 @@
-import { buildOperationCodeMap, OperationCode } from '../operation';
+import { buildOperationCodeMap, OperationCode } from '../operation.js';
 import {
   nop,
   stop,
@@ -6,7 +6,7 @@ import {
   disableInterrupts,
   enableInterrupts,
   prefixCb,
-} from './operationInfos';
+} from './operationInfos.js';
 
 const operationCodes: OperationCode[] = [
   {

@@ -12,3 +12,4 @@ Links:
 - http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
 - http://www.devrs.com/gb/files/opcodes.html
 - https://jgmalcolm.com/z80/
+- https://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM

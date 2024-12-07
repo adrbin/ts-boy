@@ -1,5 +1,4 @@
-import { readFile, writeFile } from 'fs/promises';
-import { Storage } from '../lib/gameboy-emulator';
+import { Storage } from '../lib/gameboy-emulator.js';
 
 export class WebStorage implements Storage {
   filename: string;

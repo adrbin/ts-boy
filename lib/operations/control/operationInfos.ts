@@ -1,8 +1,8 @@
-import { ClockData } from '../../clock-data';
-import { GameboyCpu } from '../../gameboy-cpu';
-import { Flags, Register16 } from '../../registers';
-import { toSignedByte } from '../../utils';
-import { OperationInfo } from '../operation';
+import { ClockData } from '../../clock-data.js';
+import { GameboyCpu } from '../../gameboy-cpu.js';
+import { Flags, Register16 } from '../../registers.js';
+import { toSignedByte } from '../../utils.js';
+import { OperationInfo } from '../operation.js';
 
 export const jumpRelativeWithCondition = (
   condition: (flags: Flags) => boolean,

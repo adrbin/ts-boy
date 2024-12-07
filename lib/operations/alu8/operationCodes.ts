@@ -1,5 +1,5 @@
-import { Register8 } from '../../registers';
-import { buildOperationCodeMap, OperationCode } from '../operation';
+import { Register8 } from '../../registers.js';
+import { buildOperationCodeMap, OperationCode } from '../operation.js';
 import {
   addByteToA,
   addHlAddressToA,
@@ -19,7 +19,7 @@ import {
   subtractByteFromA,
   subtractHlAddressFromA,
   subtractRegister8FromA,
-} from './operationInfos';
+} from './operationInfos.js';
 
 const operationCodes: OperationCode[] = [
   {
@@ -120,11 +120,11 @@ const operationCodes: OperationCode[] = [
   },
   {
     opcode: 0x84,
-    operationInfo: addRegister8ToA(Register8.L),
+    operationInfo: addRegister8ToA(Register8.H),
   },
   {
     opcode: 0x85,
-    operationInfo: addRegister8ToA(Register8.B),
+    operationInfo: addRegister8ToA(Register8.L),
   },
   {
     opcode: 0x86,
@@ -152,11 +152,11 @@ const operationCodes: OperationCode[] = [
   },
   {
     opcode: 0x8c,
-    operationInfo: addRegister8ToA(Register8.L, true),
+    operationInfo: addRegister8ToA(Register8.H, true),
   },
   {
     opcode: 0x8d,
-    operationInfo: addRegister8ToA(Register8.B, true),
+    operationInfo: addRegister8ToA(Register8.L, true),
   },
   {
     opcode: 0x8e,
@@ -184,11 +184,11 @@ const operationCodes: OperationCode[] = [
   },
   {
     opcode: 0x94,
-    operationInfo: subtractRegister8FromA(Register8.L),
+    operationInfo: subtractRegister8FromA(Register8.H),
   },
   {
     opcode: 0x95,
-    operationInfo: subtractRegister8FromA(Register8.B),
+    operationInfo: subtractRegister8FromA(Register8.L),
   },
   {
     opcode: 0x96,
@@ -216,11 +216,11 @@ const operationCodes: OperationCode[] = [
   },
   {
     opcode: 0x9c,
-    operationInfo: subtractRegister8FromA(Register8.L, true),
+    operationInfo: subtractRegister8FromA(Register8.H, true),
   },
   {
     opcode: 0x9d,
-    operationInfo: subtractRegister8FromA(Register8.B, true),
+    operationInfo: subtractRegister8FromA(Register8.L, true),
   },
   {
     opcode: 0x9e,
@@ -261,14 +261,14 @@ const operationCodes: OperationCode[] = [
   {
     opcode: 0xa4,
     operationInfo: logicallyApplyRegister8ToA(
-      Register8.L,
+      Register8.H,
       LogicalOperation.And,
     ),
   },
   {
     opcode: 0xa5,
     operationInfo: logicallyApplyRegister8ToA(
-      Register8.B,
+      Register8.L,
       LogicalOperation.And,
     ),
   },
@@ -314,14 +314,14 @@ const operationCodes: OperationCode[] = [
   {
     opcode: 0xac,
     operationInfo: logicallyApplyRegister8ToA(
-      Register8.L,
+      Register8.H,
       LogicalOperation.Xor,
     ),
   },
   {
     opcode: 0xad,
     operationInfo: logicallyApplyRegister8ToA(
-      Register8.B,
+      Register8.L,
       LogicalOperation.Xor,
     ),
   },
@@ -354,11 +354,11 @@ const operationCodes: OperationCode[] = [
   },
   {
     opcode: 0xb4,
-    operationInfo: logicallyApplyRegister8ToA(Register8.L, LogicalOperation.Or),
+    operationInfo: logicallyApplyRegister8ToA(Register8.H, LogicalOperation.Or),
   },
   {
     opcode: 0xb5,
-    operationInfo: logicallyApplyRegister8ToA(Register8.B, LogicalOperation.Or),
+    operationInfo: logicallyApplyRegister8ToA(Register8.L, LogicalOperation.Or),
   },
   {
     opcode: 0xb6,
@@ -386,11 +386,11 @@ const operationCodes: OperationCode[] = [
   },
   {
     opcode: 0xbc,
-    operationInfo: subtractRegister8FromA(Register8.L, false, false),
+    operationInfo: subtractRegister8FromA(Register8.H, false, false),
   },
   {
     opcode: 0xbd,
-    operationInfo: subtractRegister8FromA(Register8.B, false, false),
+    operationInfo: subtractRegister8FromA(Register8.L, false, false),
   },
   {
     opcode: 0xbe,

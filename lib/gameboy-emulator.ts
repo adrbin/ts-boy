@@ -1,14 +1,12 @@
-import { FRAME_LENGTH, FRAME_TIME_IN_MS } from './constants';
-import { delay } from './utils';
-import { Display } from './display';
-import { GameboyCpu } from './gameboy-cpu';
-import { Clock } from './clock';
-import { GameboyGpu } from './gameboy-gpu';
-import { ClockData } from './clock-data';
+import { FRAME_LENGTH, FRAME_TIME_IN_MS } from './constants.js';
+import { delay } from './utils.js';
+import { GameboyCpu } from './gameboy-cpu.js';
+import { Clock } from './clock.js';
+import { GameboyGpu } from './gameboy-gpu.js';
+import { ClockData } from './clock-data.js';
 
 export interface Renderer {
-  init: () => Promise<void> | void;
-  draw: (display: Display) => Promise<void> | void;
+  draw: () => Promise<void> | void;
 }
 
 export interface Audio {
@@ -16,49 +14,66 @@ export interface Audio {
   stop: () => void;
 }
 
-export interface GameboyEmulatorParams {
-  cpu: GameboyCpu;
-  clock: Clock;
-  renderer: Renderer;
-  audio: Audio;
+export type InputCallback = () => Set<string>;
+export type WaitInputCallback = () => Promise<number>;
+export type CancelWaitInputCallback = () => void;
+
+export interface Input {
+  getInput: InputCallback;
 }
 
-export class VmRunner {
+export interface Storage {
+  save: (data: any) => Promise<void> | void;
+  load: () => Promise<any> | any;
+}
+
+export interface GameboyEmulatorParams {
   cpu: GameboyCpu;
   gpu: GameboyGpu;
-  clock = new Clock(new ClockData(), FRAME_LENGTH);
+  clock: Clock;
   renderer: Renderer;
-  audio: Audio;
-  isStopped = false;
+}
 
-  constructor({ cpu, clock, renderer, audio }: GameboyEmulatorParams) {
-    this.cpu = cpu;
-    this.clock = clock;
+export class GameboyEmulator {
+  #cpu: GameboyCpu;
+  #gpu: GameboyGpu;
+  #clock = new Clock(new ClockData(), FRAME_LENGTH);
+  renderer: Renderer;
+  #isStopped = false;
+
+  constructor({ cpu, gpu, clock, renderer }: GameboyEmulatorParams) {
+    this.#cpu = cpu;
+    this.#gpu = gpu;
+    this.#clock = clock;
     this.renderer = renderer;
-    this.audio = audio;
   }
 
   async run() {
-    this.isStopped = false;
-    await this.renderer.init();
+    this.#isStopped = false;
 
-    let i = 0;
+    while (!this.#cpu.isHalted && !this.#isStopped) {
+      const loopStart = Date.now();
+      this.#clock.hasReset = false;
 
-    while (!this.cpu.isHalted && !this.isStopped) {
-      const clockData = this.cpu.step();
-      this.gpu.step();
+      const clockData = this.#cpu.step();
+      this.#gpu.step();
 
-      this.clock.increment(clockData);
+      this.#clock.increment(clockData);
 
-      if (this.clock.didReset) {
-        await this.renderer.draw(this.cpu.display);
-        await delay(FRAME_TIME_IN_MS);
+      if (this.#clock.hasReset) {
+        await this.renderer.draw();
+        const msSinceLoopStart = Date.now() - loopStart;
+        const remainingMsInFrame = Math.max(
+          0,
+          FRAME_TIME_IN_MS - msSinceLoopStart,
+        );
+        await delay(remainingMsInFrame);
       }
     }
   }
 
   async stop() {
-    this.isStopped = true;
+    this.#isStopped = true;
     await delay();
   }
 }

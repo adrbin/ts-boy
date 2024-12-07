@@ -1,4 +1,4 @@
-import { BYTE_LENGTH } from './constants';
+import { BYTE_LENGTH } from './constants.js';
 
 export const delay = (ms?: number) => {
   return new Promise<void>(resolve => setTimeout(resolve, ms));
@@ -27,7 +27,7 @@ export const nibblesToHex = (nibbles: number[]) => {
 };
 
 export const toHex = (value: number) => {
-  return value.toString(16).toUpperCase();
+  return `0x${value.toString(16).toUpperCase().padStart(2, '0')}`;
 };
 
 export const joinNibbles = (...nibbles: number[]) => {
@@ -146,34 +146,57 @@ export const toWord = (value: number) => {
   return value & 0xffff;
 };
 
-export const getEnumValues = (en: Record<string, string | number>) => {
+export type Enum = Record<string, string | number>;
+
+export const getEnumValues = <T>(en: Enum) => {
   return Object.values(en)
     .map(Number)
-    .filter(x => !isNaN(x));
+    .filter(x => !isNaN(x)) as T[];
 };
 
-export const getEnumValuesToFlagObject = <T>(
-  en: Record<string, string | number>,
+export type FlagsObject = Record<number, boolean>;
+
+export const getByteToFlagsObject = <T extends FlagsObject>(
+  en: Enum,
   byte: number,
 ) => {
-  return getEnumValues(en).reduce((acc, index) => {
+  return getEnumValues<number>(en).reduce((acc, index) => {
     acc[index] = getNthBitFlag(byte, index);
     return acc;
   }, {} as T);
 };
 
-export const getEnumValuesToNumericObject = <T>(
-  en: Record<string, string | number>,
+export type NumericObject = Record<number, number>;
+
+export const getByteToNumericObject = <T extends NumericObject>(
+  en: Enum,
   byte: number,
 ) => {
-  return getEnumValues(en).reduce((acc, index) => {
+  return getEnumValues<number>(en).reduce((acc, index) => {
     acc[index] = getNthBit(byte, index);
     return acc;
   }, {} as T);
 };
 
-export const isSumZero = (...values: number[]) => {
-  return values.reduce((acc, cur) => acc + cur, 0) === 0;
+export const getNumericObjectKeys = (object: any) => {
+  return Object.keys(object)
+    .map(Number)
+    .filter(x => !isNaN(x)) as number[];
+};
+
+export const setByteFromFlagsObject = <T extends Partial<FlagsObject>>(
+  flags: T,
+  byte: number,
+) => {
+  return getNumericObjectKeys(flags).reduce((acc, index) => {
+    const value = flags[index];
+
+    return value === undefined ? acc : setNthBit(acc, index, value);
+  }, byte);
+};
+
+export const isByteSumZero = (...values: number[]) => {
+  return toByte(values.reduce((acc, cur) => acc + cur, 0)) === 0;
 };
 
 const checkCarry = (value: number, bit: number) => {

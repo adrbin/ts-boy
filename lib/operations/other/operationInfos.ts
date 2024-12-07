@@ -1,7 +1,7 @@
-import { ClockData } from '../../clock-data';
-import { GameboyCpu } from '../../gameboy-cpu';
-import { OperationInfo } from '../operation';
-import prefixCbOperations from '../prefixCb/operationCodes';
+import { ClockData } from '../../clock-data.js';
+import { GameboyCpu } from '../../gameboy-cpu.js';
+import { OperationInfo } from '../operation.js';
+import prefixCbOperations from '../prefixCb/operationCodes.js';
 
 export const nop: OperationInfo = {
   operation: () => {},
@@ -11,7 +11,6 @@ export const nop: OperationInfo = {
 
 export const stop: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
-    cpu.fetchByte();
     cpu.isStopped = true;
   },
   length: 1,

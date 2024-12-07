@@ -1,5 +1,4 @@
-import { Clock } from './clock';
-import { ClockData } from './clock-data';
+import { Clock } from './clock.js';
 import {
   DISPLAY_HEIGHT,
   DISPLAY_WIDTH,
@@ -17,15 +16,10 @@ import {
   OAM_ADDRESS,
   OAM_SIZE,
   OAM_COUNT,
-  FRAME_LENGTH,
   TILE_MAP_LENGTH,
-} from './constants';
-import { LcdControl, LcdControls, Memory, Stat } from './memory';
-import {
-  getEnumValuesToNumericObject,
-  getNthBit,
-  getNthBitFlag,
-} from './utils';
+} from './constants.js';
+import { LcdControl, LcdControls, Memory, Stat } from './memory.js';
+import { getByteToNumericObject, getNthBit, getNthBitFlag } from './utils.js';
 
 export enum Mode {
   HBlank = 0,
@@ -35,8 +29,9 @@ export enum Mode {
 }
 
 export interface GpuParams {
-  data: Uint8ClampedArray;
+  imageData: Uint8ClampedArray;
   memory: Memory;
+  clock: Clock;
 }
 
 enum OamFlag {
@@ -65,19 +60,28 @@ const colors = [
 ];
 
 export class GameboyGpu {
-  clock = new Clock(new ClockData(), FRAME_LENGTH);
-  mode = Mode.OamScan;
-  data: Uint8ClampedArray;
+  imageData: Uint8ClampedArray;
   memory: Memory;
+  clock: Clock;
 
-  constructor({ data, memory }: GpuParams) {
-    this.data = data;
+  mode = Mode.OamScan;
+  dot = 0;
+  y = 0;
+
+  constructor({ imageData, memory, clock }: GpuParams) {
+    this.imageData = imageData;
     this.memory = memory;
+    this.clock = clock;
+
+    this.reset();
   }
 
   reset() {
-    for (let i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT * RGBA_SIZE; i++) {
-      this.data[i] = 0;
+    const color = colors[0];
+    for (let pixel = 0; pixel < DISPLAY_WIDTH * DISPLAY_HEIGHT; pixel++) {
+      for (let i = 0; i < RGBA_SIZE; i++) {
+        this.imageData[pixel * RGBA_SIZE + i] = color[i];
+      }
     }
   }
 
@@ -86,17 +90,12 @@ export class GameboyGpu {
     this.#setStats();
   }
 
-  get dot() {
-    return this.clock.value % FRAME_LINE_LENGTH;
-  }
-
-  get y() {
-    return Math.floor(this.clock.value / FRAME_LINE_LENGTH);
-  }
-
   #checkMode() {
-    if (this.clock.didReset) {
-      this.mode = Mode.HBlank;
+    this.y = Math.floor(this.clock.t / FRAME_LINE_LENGTH);
+    this.dot = this.clock.t % FRAME_LINE_LENGTH;
+
+    if (this.clock.hasReset) {
+      this.mode = Mode.OamScan;
       this.reset();
       return;
     }
@@ -106,7 +105,12 @@ export class GameboyGpu {
       return;
     }
 
-    if (this.dot >= DRAWING_LENGTH) {
+    if (this.dot < OAM_SCAN_LENGTH) {
+      this.mode = Mode.OamScan;
+      return;
+    }
+
+    if (this.dot >= OAM_SCAN_LENGTH + DRAWING_LENGTH) {
       if (this.mode === Mode.Drawing) {
         this.#renderLine();
       }
@@ -154,7 +158,7 @@ export class GameboyGpu {
       const tileX = x & 7;
       if (tileX === 0) {
         let tileIndex = this.#getBackgroundTileIndex(x, lcdControls);
-        if (tileIndex < 128 && lcdControls[LcdControl.BgTileDataArea]) {
+        if (tileIndex < 128 && !lcdControls[LcdControl.BgTileDataArea]) {
           tileIndex += 256;
         }
 
@@ -259,8 +263,10 @@ export class GameboyGpu {
     for (let x = 0; x < DISPLAY_WIDTH; x++) {
       const color = colors[row[x]];
 
+      const pixelIndex = (this.y * DISPLAY_WIDTH + x) * RGBA_SIZE;
+
       for (let i = 0; i < RGBA_SIZE; i++) {
-        this.data[x * RGBA_SIZE + i] = color[i];
+        this.imageData[pixelIndex + i] = color[i];
       }
     }
   }
@@ -269,9 +275,9 @@ export class GameboyGpu {
     const tileX =
       this.#getTileCoordinateFromPixel(x + this.memory.scx) &
       (TILE_MAP_LENGTH - 1);
-    const tileY = this.#getTileCoordinateFromPixel(
-      (this.y + this.memory.scy) & (TILE_MAP_LENGTH - 1),
-    );
+    const tileY =
+      this.#getTileCoordinateFromPixel(this.y + this.memory.scy) &
+      (TILE_MAP_LENGTH - 1);
     const tileMapAddress = lcdControls[LcdControl.BgTileMapArea]
       ? TILE_MAP1_ADDRESS
       : TILE_MAP0_ADDRESS;
@@ -283,14 +289,14 @@ export class GameboyGpu {
   }
 
   #getTileData(index: number, tileLine: number) {
-    const address =
-      TILE_DATA_ADDRESS + index * TILE_SIZE + tileLine * WORD_LENGTH;
+    const address = TILE_DATA_ADDRESS + index * TILE_SIZE + tileLine * 2;
     const word = this.memory.getWord(address);
 
     const tileData: number[] = [];
     for (let i = 0; i < TILE_LENGTH; i++) {
       tileData[i] =
-        getNthBit(word, BYTE_LENGTH - i) + getNthBit(word, WORD_LENGTH - i) * 2;
+        getNthBit(word, BYTE_LENGTH - i - 1) +
+        getNthBit(word, WORD_LENGTH - i - 1) * 2;
     }
 
     return tileData;
@@ -321,7 +327,7 @@ export class GameboyGpu {
       y: this.memory.getByte(address),
       x: this.memory.getByte(address + 1),
       tileIndex: this.memory.getByte(address + 2),
-      flags: getEnumValuesToNumericObject<OamFlags>(
+      flags: getByteToNumericObject<OamFlags>(
         OamFlag,
         this.memory.getByte(address + 3),
       ),

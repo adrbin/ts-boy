@@ -53,7 +53,7 @@ export const returnWithoutInterrupt: OperationInfo = {
 export const returnWithInterrupt: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
     cpu.popSp(Register16.PC);
-    throw new Error('Interrupts not implemented yet');
+    cpu.ime = true;
   },
   length: 1,
   clock: new ClockData(4),

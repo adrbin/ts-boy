@@ -3,7 +3,7 @@ import { GameboyCpu } from '../../gameboy-cpu.js';
 import { Flag, Register16, Register8 } from '../../registers.js';
 import {
   getHigherNibble,
-  getLowerByte,
+  getLowerNibble,
   getNthBit,
   joinNibbles,
   setNthBit,
@@ -150,7 +150,10 @@ export const swapRegister8 = (register8: Register8): OperationInfo => {
     operation: (cpu: GameboyCpu) => {
       const byte = cpu.registers.getByte(register8);
 
-      const resultByte = joinNibbles(getHigherNibble(byte), getLowerByte(byte));
+      const resultByte = joinNibbles(
+        getHigherNibble(byte),
+        getLowerNibble(byte),
+      );
 
       cpu.registers.setByte(register8, resultByte);
 
@@ -166,7 +169,7 @@ export const swapHlAddress: OperationInfo = {
     const address = cpu.registers.getWord(Register16.HL);
     const byte = cpu.memory.getByte(address);
 
-    const resultByte = joinNibbles(getHigherNibble(byte), getLowerByte(byte));
+    const resultByte = joinNibbles(getHigherNibble(byte), getLowerNibble(byte));
 
     cpu.memory.setByte(address, resultByte);
 

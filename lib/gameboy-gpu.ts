@@ -17,6 +17,7 @@ import {
   OAM_SIZE,
   OAM_COUNT,
   TILE_MAP_LENGTH,
+  Interrupt,
 } from './constants.js';
 import { LcdControl, LcdControls, Memory, Stat } from './memory.js';
 import { getByteToNumericObject, getNthBit, getNthBitFlag } from './utils.js';
@@ -83,11 +84,14 @@ export class GameboyGpu {
         this.imageData[pixel * RGBA_SIZE + i] = color[i];
       }
     }
+
+    this.memory.setIf({ [Interrupt.VBlank]: false });
   }
 
   step() {
     this.#checkMode();
     this.#setStats();
+    this.#setStatInterrupt();
   }
 
   #checkMode() {
@@ -102,6 +106,7 @@ export class GameboyGpu {
 
     if (this.y >= DISPLAY_HEIGHT) {
       this.mode = Mode.VBlank;
+      this.memory.setIf({ [Interrupt.VBlank]: true });
       return;
     }
 
@@ -127,10 +132,25 @@ export class GameboyGpu {
   #setStats() {
     this.memory.ly = this.y;
     this.memory.setStats({
-      [Stat.LycFlag]: this.memory.lyc === this.memory.ly,
+      [Stat.LycFlag]: this.memory.lyc === this.y,
       [Stat.ModeFlagBit0]: getNthBitFlag(this.mode, 0),
       [Stat.ModeFlagBit1]: getNthBitFlag(this.mode, 1),
     });
+  }
+
+  #setStatInterrupt() {
+    const stats = this.memory.getStats();
+    let statInterrupt = false;
+    if (
+      (stats[Stat.HBlankInterrupt] && this.mode === Mode.HBlank) ||
+      (stats[Stat.VBlankInterrupt] && this.mode === Mode.VBlank) ||
+      (stats[Stat.OamInterrupt] && this.mode === Mode.OamScan) ||
+      (stats[Stat.LycInterrupt] && this.memory.lyc === this.memory.ly)
+    ) {
+      statInterrupt = true;
+    }
+
+    this.memory.setIf({ [Interrupt.Stat]: statInterrupt });
   }
 
   #renderLine() {

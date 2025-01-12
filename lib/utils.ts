@@ -31,7 +31,7 @@ export const toHex = (value: number) => {
 };
 
 export const joinNibbles = (...nibbles: number[]) => {
-  return joinNumbers(nibbles, 8);
+  return joinNumbers(nibbles, 4);
 };
 
 export const joinBytes = (...bytes: number[]) => {
@@ -98,20 +98,6 @@ export const isByte = (value: number) => {
 
 export const isWord = (value: number) => {
   return value >= 0 && value < 0x10000;
-};
-
-export const matchInstruction = (nibbles: number[], pattern: string) => {
-  for (let i = 0; i < pattern.length; i++) {
-    if (
-      pattern[i].toLowerCase() === 'x' ||
-      nibbles[i].toString(16) === pattern[i].toLowerCase()
-    ) {
-      continue;
-    }
-    return false;
-  }
-
-  return true;
 };
 
 export const toSignedByte = (unsignedByte: number) => {
@@ -186,7 +172,7 @@ export const getNumericObjectKeys = (object: any) => {
 
 export const setByteFromFlagsObject = <T extends Partial<FlagsObject>>(
   flags: T,
-  byte: number,
+  byte = 0,
 ) => {
   return getNumericObjectKeys(flags).reduce((acc, index) => {
     const value = flags[index];

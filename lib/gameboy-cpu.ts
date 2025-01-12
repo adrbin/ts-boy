@@ -1,9 +1,11 @@
+import { ClockData } from './clock-data.js';
 import { Clock } from './clock.js';
+import { Interrupt, INTERRUPT_ADDRESS_MAPPING } from './constants.js';
 import { Memory } from './memory.js';
 import operationCodesMap from './operations/operation-codes.js';
 import referenceOpcodes from './operations/reference-opcodes.js';
 import { Register16, Registers } from './registers.js';
-import { toHex } from './utils.js';
+import { getEnumValues, toHex } from './utils.js';
 
 export interface CpuParams {
   memory: Memory;
@@ -17,6 +19,7 @@ export class GameboyCpu {
   isStopped = false;
   isHalted = false;
   hasBranched = false;
+  ime = false;
 
   constructor({ memory, clock }: CpuParams) {
     this.memory = memory;
@@ -54,7 +57,9 @@ export class GameboyCpu {
       );
     }
 
-    return clockData;
+    const interruptClockData = this.#checkInterrupts();
+
+    return clockData.add(interruptClockData);
   }
 
   fetchByte() {
@@ -78,12 +83,6 @@ export class GameboyCpu {
     return word;
   }
 
-  #checkBios(pc: number) {
-    if (this.memory.isBiosLoaded && !this.memory.bios.hasRelativeAddress(pc)) {
-      this.memory.unloadBios();
-    }
-  }
-
   popSp(register16: Register16) {
     const address = this.registers.getWord(Register16.SP);
     const word = this.memory.getWord(address);
@@ -96,5 +95,38 @@ export class GameboyCpu {
     const address = this.registers.getWord(Register16.SP);
     const word = this.registers.getWord(register16);
     this.memory.setWord(address, word);
+  }
+
+  #checkBios(pc: number) {
+    if (this.memory.isBiosLoaded && !this.memory.bios.hasRelativeAddress(pc)) {
+      this.memory.unloadBios();
+    }
+  }
+
+  #checkInterrupts() {
+    if (!this.ime) return ClockData.empty();
+
+    const ies = this.memory.getIe();
+    const ifs = this.memory.getIf();
+
+    for (const interrupt of getEnumValues<Interrupt>(Interrupt)) {
+      if (ies[interrupt] && ifs[interrupt]) {
+        return this.#handleInterrupt(interrupt);
+      }
+    }
+
+    return ClockData.empty();
+  }
+
+  #handleInterrupt(interrupt: Interrupt) {
+    this.pushSp(Register16.PC);
+
+    const interruptAddress = INTERRUPT_ADDRESS_MAPPING[interrupt];
+    this.registers.setWord(Register16.PC, interruptAddress);
+
+    this.ime = false;
+    this.memory.setIf({ [interrupt]: false });
+
+    return new ClockData(5);
   }
 }

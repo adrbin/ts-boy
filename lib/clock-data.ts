@@ -8,4 +8,12 @@ export class ClockData {
   get t() {
     return this.m * 4;
   }
+
+  static empty() {
+    return new ClockData(0);
+  }
+
+  add(clockData: ClockData) {
+    return new ClockData(this.m + clockData.m);
+  }
 }

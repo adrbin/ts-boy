@@ -62,10 +62,10 @@ export const loadAFromRegisterAddress = (
 
 export const loadAFromHlAddressWithIncrement: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
-    const a = cpu.registers.getByte(Register8.A);
-    const hl = cpu.registers.getWord(Register16.HL);
+    const address = cpu.registers.getWord(Register16.HL);
+    const byte = cpu.memory.getByte(address);
+    cpu.registers.setByte(Register8.A, byte);
     cpu.registers.incrementWord(Register16.HL);
-    cpu.memory.setByte(a, hl);
   },
   length: 1,
   clock: new ClockData(2),
@@ -73,10 +73,10 @@ export const loadAFromHlAddressWithIncrement: OperationInfo = {
 
 export const loadAFromHlAddressWithDecrement: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
-    const a = cpu.registers.getByte(Register8.A);
-    const hl = cpu.registers.getWord(Register16.HL);
+    const address = cpu.registers.getWord(Register16.HL);
+    const byte = cpu.memory.getByte(address);
+    cpu.registers.setByte(Register8.A, byte);
     cpu.registers.decrementWord(Register16.HL);
-    cpu.memory.setByte(a, hl);
   },
   length: 1,
   clock: new ClockData(2),

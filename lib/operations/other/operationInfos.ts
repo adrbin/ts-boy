@@ -27,7 +27,7 @@ export const halt: OperationInfo = {
 
 export const disableInterrupts: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
-    throw new Error('Interrupts not implemented yet');
+    cpu.ime = false;
   },
   length: 1,
   clock: new ClockData(1),
@@ -35,7 +35,7 @@ export const disableInterrupts: OperationInfo = {
 
 export const enableInterrupts: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
-    throw new Error('Interrupts not implemented yet');
+    cpu.ime = true;
   },
   length: 1,
   clock: new ClockData(1),

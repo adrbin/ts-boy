@@ -18,10 +18,6 @@ export type InputCallback = () => Set<string>;
 export type WaitInputCallback = () => Promise<number>;
 export type CancelWaitInputCallback = () => void;
 
-export interface Input {
-  getInput: InputCallback;
-}
-
 export interface Storage {
   save: (data: any) => Promise<void> | void;
   load: () => Promise<any> | any;
@@ -53,7 +49,6 @@ export class GameboyEmulator {
 
     while (!this.#cpu.isHalted && !this.#isStopped) {
       const loopStart = Date.now();
-      this.#clock.hasReset = false;
 
       const clockData = this.#cpu.step();
       this.#gpu.step();

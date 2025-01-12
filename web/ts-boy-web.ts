@@ -3,7 +3,6 @@ import { WebRenderer } from './web-renderer.js';
 import {
   DISPLAY_HEIGHT,
   DISPLAY_WIDTH,
-  FRAME_LENGTH,
   FRAME_LENGTH_IN_M,
   KEY_MAPPING,
   ROMS,
@@ -13,6 +12,9 @@ import { Memory } from '../lib/memory.js';
 import { Clock } from '../lib/clock.js';
 import { GameboyGpu } from '../lib/gameboy-gpu.js';
 import { ClockData } from '../lib/clock-data.js';
+import { Input } from '../lib/input.js';
+import { WebButtonInputHandler } from './web-button-input.js';
+import { WebKeyboardInputHandler } from './web-keyboard-input.js';
 
 const PAUSE_TEXT = 'Pause';
 const RESUME_TEXT = 'Resume';
@@ -28,6 +30,7 @@ let modeSelect: HTMLSelectElement;
 let fpsCheckbox: HTMLInputElement;
 let fpsText: HTMLElement;
 let pauseButton: HTMLButtonElement;
+const input = new Input();
 
 async function main() {
   if (gameboyEmulator) {
@@ -46,6 +49,7 @@ async function main() {
   const bios = new Uint8Array(biosBuffer);
 
   const memory = new Memory(bios, rom);
+  input.memory = memory;
 
   const clock = new Clock(new ClockData(), FRAME_LENGTH_IN_M);
 
@@ -86,6 +90,9 @@ function initUi() {
 
     buttons[key] = button;
   }
+
+  const buttonInputHandler = new WebButtonInputHandler(input, buttons);
+  const webKeyboardInputHandler = new WebKeyboardInputHandler(input);
 
   const runButton = document.getElementById('run-button');
   if (!runButton) {

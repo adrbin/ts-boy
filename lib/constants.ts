@@ -43,6 +43,27 @@ export const TILE_DATA_ADDRESS = 0x8000;
 export const TILE_MAP0_ADDRESS = 0x9800;
 export const TILE_MAP1_ADDRESS = 0x9c00;
 export const OAM_ADDRESS = 0xfe00;
+export const INPUT_ADDRESS = 0xff00;
+export const IE_ADDRESS = 0xffff;
+export const IF_ADDRESS = 0xff0f;
+
+export enum Interrupt {
+  VBlank = 0,
+  Stat = 1,
+  Timer = 2,
+  Serial = 3,
+  Joypad = 4,
+}
+
+export type Interrupts = Record<Interrupt, boolean>;
+
+export const INTERRUPT_ADDRESS_MAPPING = {
+  [Interrupt.VBlank]: 0x40,
+  [Interrupt.Stat]: 0x48,
+  [Interrupt.Timer]: 0x50,
+  [Interrupt.Serial]: 0x58,
+  [Interrupt.Joypad]: 0x60,
+};
 
 export const KEY_MAPPING: { [key: string]: string } = {
   ArrowUp: 'up',

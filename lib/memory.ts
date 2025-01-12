@@ -1,5 +1,9 @@
 import {
   BGP_ADDRESS,
+  IE_ADDRESS,
+  IF_ADDRESS,
+  Interrupt,
+  Interrupts,
   LCD_CONTROL_ADDRESS,
   LY_ADDRESS,
   LYC_ADDRESS,
@@ -108,6 +112,27 @@ export class Memory {
     const newByte = setByteFromFlagsObject(flags, byte);
 
     this.setByte(STAT_ADDRESS, newByte);
+  }
+
+  getIe() {
+    const byte = this.getByte(IE_ADDRESS);
+    const interrupts = getByteToFlagsObject<Interrupts>(Interrupt, byte);
+
+    return interrupts;
+  }
+
+  getIf() {
+    const byte = this.getByte(IF_ADDRESS);
+    const interrupts = getByteToFlagsObject<Interrupts>(Interrupt, byte);
+
+    return interrupts;
+  }
+
+  setIf(flags: Partial<Interrupts>) {
+    let byte = this.getByte(IF_ADDRESS);
+    const newByte = setByteFromFlagsObject(flags, byte);
+
+    this.setByte(IF_ADDRESS, newByte);
   }
 
   get scy() {

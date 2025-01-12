@@ -1,19 +1,16 @@
-import { Input } from '../lib/gameboy-emulator.js';
 import { INPUT_DELAY, KEY_MAPPING } from '../lib/constants.js';
 import { delay } from '../lib/utils.js';
+import { Input } from '../lib/input.js';
 
-export class WebKeyboardInput implements Input {
-  pressedKeys = new Set<string>();
-  waitListener?: (event: KeyboardEvent) => void;
-
-  constructor() {
+export class WebKeyboardInputHandler {
+  constructor(input: Input) {
     window.addEventListener('keydown', event => {
       const pressedKey = KEY_MAPPING[event.key];
       if (pressedKey === undefined) {
         return;
       }
 
-      this.pressedKeys.add(pressedKey);
+      input.setInput(pressedKey, true);
     });
 
     window.addEventListener('keyup', async event => {
@@ -24,11 +21,7 @@ export class WebKeyboardInput implements Input {
 
       await delay(INPUT_DELAY);
 
-      this.pressedKeys.delete(pressedKey);
+      input.setInput(pressedKey, false);
     });
-  }
-
-  getInput() {
-    return this.pressedKeys;
   }
 }

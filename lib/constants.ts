@@ -1,3 +1,5 @@
+export const DEBUG = true;
+
 export const KILOBYTE = 2 ^ 10;
 export const MEMORY_SIZE = 64 * KILOBYTE;
 export const PROGRAM_START = 512;
@@ -66,14 +68,18 @@ export const INTERRUPT_ADDRESS_MAPPING = {
 };
 
 export const KEY_MAPPING: { [key: string]: string } = {
-  ArrowUp: 'up',
-  ArrowLeft: 'left',
-  ArrowDown: 'down',
-  ArrowRight: 'right',
-  a: 'a',
-  s: 'b',
-  ' ': 'start',
-  c: 'select',
+  ArrowUp: 'Up',
+  ArrowLeft: 'Left',
+  ArrowDown: 'Down',
+  ArrowRight: 'Right',
+  a: 'A',
+  s: 'B',
+  ' ': 'Start',
+  c: 'Select',
 };
 
-export const ROMS = ['roms/cpu_instrs.gb', 'roms/tetris.gb'];
+export const ROMS = [
+  'roms/01-special.gb',
+  'roms/cpu_instrs.gb',
+  'roms/tetris.gb',
+];

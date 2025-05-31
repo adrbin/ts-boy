@@ -96,7 +96,7 @@ export const decimalAdjustA: OperationInfo = {
     }
 
     if (oldFlags[Flag.Carry] || a > 0x99) {
-      adjustment += 0x6;
+      adjustment += 0x60;
     }
 
     if (oldFlags[Flag.Negative]) {
@@ -110,7 +110,8 @@ export const decimalAdjustA: OperationInfo = {
     const flags = {
       [Flag.Zero]: resultByte === 0,
       [Flag.HalfCarry]: false,
-      [Flag.Carry]: resultByte > 0x99,
+      [Flag.Carry]:
+        oldFlags[Flag.Carry] || (!oldFlags[Flag.Negative] && a > 0x99),
     };
 
     cpu.registers.setFlags(flags);
@@ -295,7 +296,11 @@ export const logicallyApplyRegister8ToA = (
 
       cpu.registers.setByte(Register8.A, resultByte);
 
-      setLogicalOperationsFlags(cpu, resultByte);
+      setLogicalOperationsFlags(
+        cpu,
+        resultByte,
+        logicalOperation === LogicalOperation.And,
+      );
     },
     length: 1,
     clock: new ClockData(1),
@@ -315,18 +320,26 @@ export const logicallyApplyHlAddressWithA = (
 
       cpu.registers.setByte(Register8.A, resultByte);
 
-      setLogicalOperationsFlags(cpu, resultByte);
+      setLogicalOperationsFlags(
+        cpu,
+        resultByte,
+        logicalOperation === LogicalOperation.And,
+      );
     },
     length: 1,
     clock: new ClockData(2),
   };
 };
 
-const setLogicalOperationsFlags = (cpu: GameboyCpu, resultByte: number) => {
+const setLogicalOperationsFlags = (
+  cpu: GameboyCpu,
+  resultByte: number,
+  halfCarry: boolean,
+) => {
   const flags = {
     [Flag.Zero]: resultByte === 0,
     [Flag.Negative]: false,
-    [Flag.HalfCarry]: true,
+    [Flag.HalfCarry]: halfCarry,
     [Flag.Carry]: false,
   };
 
@@ -401,14 +414,11 @@ export const logicallyApplyByteToA = (
 
       cpu.registers.setByte(Register8.A, resultByte);
 
-      const newFlags = {
-        [Flag.Zero]: resultByte === 0,
-        [Flag.Negative]: false,
-        [Flag.HalfCarry]: true,
-        [Flag.Carry]: false,
-      };
-
-      cpu.registers.setFlags(newFlags);
+      setLogicalOperationsFlags(
+        cpu,
+        resultByte,
+        logicalOperation === LogicalOperation.And,
+      );
     },
     length: 1,
     clock: new ClockData(1),

@@ -41,14 +41,14 @@ export class Input {
     const directionalInput =
       DirectionalInput[key as keyof typeof DirectionalInput];
 
-    if (directionalInput) {
+    if (directionalInput !== undefined) {
       this.setDirectionalInput(directionalInput, value);
       return;
     }
 
     const buttonInput = ButtonInput[key as keyof typeof ButtonInput];
 
-    if (buttonInput) {
+    if (buttonInput !== undefined) {
       this.setButtonInput(buttonInput, value);
       return;
     }
@@ -81,7 +81,7 @@ export class Input {
 
     const input = this.memory.getByte(INPUT_ADDRESS);
     const isActive = getNthBit(input, isActiveIndex);
-    if (isActive) {
+    if (!isActive) {
       const newInput = setByteFromFlagsObject(inputs, input);
       this.memory.setByte(INPUT_ADDRESS, newInput);
 

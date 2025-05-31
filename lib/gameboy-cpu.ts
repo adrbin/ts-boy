@@ -1,11 +1,11 @@
 import { ClockData } from './clock-data.js';
 import { Clock } from './clock.js';
-import { Interrupt, INTERRUPT_ADDRESS_MAPPING } from './constants.js';
+import { DEBUG, Interrupt, INTERRUPT_ADDRESS_MAPPING } from './constants.js';
 import { Memory } from './memory.js';
 import operationCodesMap from './operations/operation-codes.js';
 import referenceOpcodes from './operations/reference-opcodes.js';
-import { Register16, Registers } from './registers.js';
-import { getEnumValues, toHex } from './utils.js';
+import { Register16, Register8, Registers } from './registers.js';
+import { getEnumValues, toHex, toRawHex } from './utils.js';
 
 export interface CpuParams {
   memory: Memory;
@@ -20,6 +20,9 @@ export class GameboyCpu {
   isHalted = false;
   hasBranched = false;
   ime = false;
+  lastFetchedValue = 0;
+  stateLogs: string[] = [];
+  operationLogs: string[] = [];
 
   constructor({ memory, clock }: CpuParams) {
     this.memory = memory;
@@ -27,7 +30,18 @@ export class GameboyCpu {
   }
 
   step() {
+    const interruptClockData = this.#checkInterrupts();
+
+    if (this.isHalted) {
+      return interruptClockData;
+    }
+
     this.hasBranched = false;
+
+    const pc = this.registers.getWord(Register16.PC);
+    if (pc === 0xc365) {
+      const a = 0;
+    }
 
     const opcode = this.fetchByte();
     const operationCode = operationCodesMap.get(opcode);
@@ -41,23 +55,18 @@ export class GameboyCpu {
         ? referenceOpcodes.cbprefixed[toHex(this.peekByte())]
         : referenceOpcodes.unprefixed[toHex(opcode)];
 
-    const pc = this.registers.getWord(Register16.PC);
-    if (pc >= 0xf4) {
-      const a = 0;
-    }
-
     operationInfo.operation(this);
     const clockData = this.hasBranched
       ? operationInfo.clockWithBranching
       : operationInfo.clock;
+
+    this.log(operationCode!.mnemonic);
 
     if (clockData === undefined) {
       throw new Error(
         `Opcode ${opcode} has branched but there is no clock data provided for the branching case`,
       );
     }
-
-    const interruptClockData = this.#checkInterrupts();
 
     return clockData.add(interruptClockData);
   }
@@ -67,6 +76,7 @@ export class GameboyCpu {
     this.#checkBios(pc);
     this.registers.incrementWord(Register16.PC);
     const byte = this.memory.getByte(pc);
+    this.lastFetchedValue = byte;
     return byte;
   }
 
@@ -80,6 +90,7 @@ export class GameboyCpu {
     const pc = this.registers.getWord(Register16.PC);
     this.registers.incrementWord(Register16.PC, 2);
     const word = this.memory.getWord(pc);
+    this.lastFetchedValue = word;
     return word;
   }
 
@@ -104,7 +115,7 @@ export class GameboyCpu {
   }
 
   #checkInterrupts() {
-    if (!this.ime) return ClockData.empty();
+    if (!this.isHalted && !this.ime) return ClockData.empty();
 
     const ies = this.memory.getIe();
     const ifs = this.memory.getIf();
@@ -112,6 +123,11 @@ export class GameboyCpu {
     for (const interrupt of getEnumValues<Interrupt>(Interrupt)) {
       if (ies[interrupt] && ifs[interrupt]) {
         return this.#handleInterrupt(interrupt);
+      }
+
+      if (this.isHalted && ifs[interrupt]) {
+        this.isHalted = false;
+        return ClockData.empty();
       }
     }
 
@@ -124,9 +140,59 @@ export class GameboyCpu {
     const interruptAddress = INTERRUPT_ADDRESS_MAPPING[interrupt];
     this.registers.setWord(Register16.PC, interruptAddress);
 
+    this.isHalted = false;
     this.ime = false;
     this.memory.setIf({ [interrupt]: false });
 
     return new ClockData(5);
+  }
+
+  log(mnemonic?: string) {
+    this.#logState();
+    if (mnemonic) {
+      this.#logOperation(mnemonic);
+    }
+  }
+
+  #logState() {
+    if (!DEBUG) return;
+
+    const a = this.registers.getByte(Register8.A);
+    const f = this.registers.getByte(Register8.F);
+    const b = this.registers.getByte(Register8.B);
+    const c = this.registers.getByte(Register8.C);
+    const d = this.registers.getByte(Register8.D);
+    const e = this.registers.getByte(Register8.E);
+    const h = this.registers.getByte(Register8.H);
+    const l = this.registers.getByte(Register8.L);
+    const sp = this.registers.getWord(Register16.SP);
+    const pc = this.registers.getWord(Register16.PC);
+    const pcmem = this.memory.getByte(pc);
+    const pcmem1 = this.memory.getByte(pc + 1);
+    const pcmem2 = this.memory.getByte(pc + 2);
+    const pcmem3 = this.memory.getByte(pc + 3);
+
+    const log = `A:${toRawHex(a)} F:${toRawHex(f)} B:${toRawHex(
+      b,
+    )} C:${toRawHex(c)} D:${toRawHex(d)} E:${toRawHex(e)} H:${toRawHex(
+      h,
+    )} L:${toRawHex(l)} SP:${toRawHex(sp, 4)} PC:${toRawHex(
+      pc,
+      4,
+    )} PCMEM:${toRawHex(pcmem)},${toRawHex(pcmem1)},${toRawHex(
+      pcmem2,
+    )},${toRawHex(pcmem3)}`;
+
+    if (log !== this.stateLogs[this.stateLogs.length - 1]) {
+      this.stateLogs.push(log);
+    }
+  }
+
+  #logOperation(mnemonic: string) {
+    const textOperation = mnemonic.replace(
+      '{}',
+      this.lastFetchedValue.toString(),
+    );
+    this.operationLogs.push(textOperation);
   }
 }

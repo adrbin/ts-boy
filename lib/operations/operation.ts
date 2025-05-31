@@ -5,6 +5,7 @@ export type OperationCallback = (cpu: GameboyCpu) => void;
 
 export interface OperationCode {
   readonly opcode: number;
+  readonly mnemonic: string;
   readonly operationInfo: OperationInfo;
 }
 

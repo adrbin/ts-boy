@@ -78,6 +78,10 @@ export class Registers {
 
   setByte(register8: Register8, byte: number) {
     this.#checkByte(register8, byte);
+    if (register8 === Register8.F) {
+      byte = byte & 0xf0;
+    }
+
     this.#registers8.set(register8, byte);
   }
 
@@ -127,8 +131,8 @@ export class Registers {
     }
 
     const registers = registerMapping[register16 as Register16Combined];
-    this.#registers8.set(registers[0], getLowerByte(word));
-    this.#registers8.set(registers[1], getHigherByte(word));
+    this.setByte(registers[0], getLowerByte(word));
+    this.setByte(registers[1], getHigherByte(word));
   }
 
   setRegister16(targetRegister16: Register16, sourceRegister16: Register16) {

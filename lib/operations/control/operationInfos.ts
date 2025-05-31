@@ -81,7 +81,7 @@ export const jumpWithCondition = (
 export const jumpFromHl: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
     const address = cpu.registers.getWord(Register16.HL);
-    cpu.registers.incrementWord(Register16.PC, address);
+    cpu.registers.setWord(Register16.PC, address);
   },
   length: 1,
   clock: new ClockData(1),

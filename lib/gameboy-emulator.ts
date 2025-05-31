@@ -31,14 +31,14 @@ export interface GameboyEmulatorParams {
 }
 
 export class GameboyEmulator {
-  #cpu: GameboyCpu;
+  cpu: GameboyCpu;
   #gpu: GameboyGpu;
   #clock = new Clock(new ClockData(), FRAME_LENGTH);
   renderer: Renderer;
   #isStopped = false;
 
   constructor({ cpu, gpu, clock, renderer }: GameboyEmulatorParams) {
-    this.#cpu = cpu;
+    this.cpu = cpu;
     this.#gpu = gpu;
     this.#clock = clock;
     this.renderer = renderer;
@@ -47,15 +47,15 @@ export class GameboyEmulator {
   async run() {
     this.#isStopped = false;
 
-    while (!this.#cpu.isHalted && !this.#isStopped) {
+    while (!this.#isStopped) {
       const loopStart = Date.now();
 
-      const clockData = this.#cpu.step();
+      const clockData = this.cpu.step();
       this.#gpu.step();
 
       this.#clock.increment(clockData);
 
-      if (this.#clock.hasReset) {
+      if (this.#clock.hasReset || this.cpu.isHalted) {
         await this.renderer.draw();
         const msSinceLoopStart = Date.now() - loopStart;
         const remainingMsInFrame = Math.max(

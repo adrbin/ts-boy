@@ -1,6 +1,7 @@
 import { GameboyEmulator } from '../lib/gameboy-emulator.js';
 import { WebRenderer } from './web-renderer.js';
 import {
+  DEBUG,
   DISPLAY_HEIGHT,
   DISPLAY_WIDTH,
   FRAME_LENGTH_IN_M,
@@ -15,6 +16,7 @@ import { ClockData } from '../lib/clock-data.js';
 import { Input } from '../lib/input.js';
 import { WebButtonInputHandler } from './web-button-input.js';
 import { WebKeyboardInputHandler } from './web-keyboard-input.js';
+import { Register16, Register8 } from '../lib/registers.js';
 
 const PAUSE_TEXT = 'Pause';
 const RESUME_TEXT = 'Resume';
@@ -64,10 +66,28 @@ async function main() {
     renderer,
   });
 
-  // gpu.reset();
-  // renderer.draw();
+  debug();
 
   await gameboyEmulator.run();
+}
+
+function debug() {
+  if (!DEBUG) return;
+
+  gameboyEmulator.cpu.registers.setByte(Register8.A, 0x01);
+  gameboyEmulator.cpu.registers.setByte(Register8.F, 0xb0);
+  gameboyEmulator.cpu.registers.setByte(Register8.B, 0x00);
+  gameboyEmulator.cpu.registers.setByte(Register8.C, 0x13);
+  gameboyEmulator.cpu.registers.setByte(Register8.D, 0x00);
+  gameboyEmulator.cpu.registers.setByte(Register8.E, 0xd8);
+  gameboyEmulator.cpu.registers.setByte(Register8.H, 0x01);
+  gameboyEmulator.cpu.registers.setByte(Register8.L, 0x4d);
+  gameboyEmulator.cpu.registers.setWord(Register16.SP, 0xfffe);
+  gameboyEmulator.cpu.registers.setWord(Register16.PC, 0x0100);
+
+  gameboyEmulator.cpu.memory.unloadBios();
+
+  gameboyEmulator.cpu.log();
 }
 
 function initUi() {
@@ -166,6 +186,10 @@ async function pauseRom() {
   if (pauseButton.textContent === PAUSE_TEXT) {
     pauseButton.innerText = RESUME_TEXT;
     await gameboyEmulator.stop();
+    if (DEBUG) {
+      console.log(gameboyEmulator.cpu.operationLogs.join('\n'));
+      console.log(gameboyEmulator.cpu.stateLogs.join('\n'));
+    }
   } else {
     pauseButton.innerText = PAUSE_TEXT;
     await gameboyEmulator.run();

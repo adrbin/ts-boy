@@ -1,5 +1,6 @@
 import {
   BGP_ADDRESS,
+  DEBUG,
   IE_ADDRESS,
   IF_ADDRESS,
   Interrupt,
@@ -85,6 +86,9 @@ export class Memory {
   }
 
   setByte(address: number, value: number) {
+    if (DEBUG && address === LY_ADDRESS) {
+      value = 0x90;
+    }
     const memorySegment = this.#getMemorySegment(address);
     memorySegment.setByteRelative(address, value);
   }

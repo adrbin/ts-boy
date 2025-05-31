@@ -27,7 +27,11 @@ export const nibblesToHex = (nibbles: number[]) => {
 };
 
 export const toHex = (value: number) => {
-  return `0x${value.toString(16).toUpperCase().padStart(2, '0')}`;
+  return `0x${toRawHex(value)}`;
+};
+
+export const toRawHex = (value: number, padding = 2) => {
+  return value.toString(16).toUpperCase().padStart(padding, '0');
 };
 
 export const joinNibbles = (...nibbles: number[]) => {
@@ -191,7 +195,7 @@ const checkCarry = (value: number, bit: number) => {
 };
 
 export const hasByteSumCarry = (...bytes: number[]) => {
-  const sum = sumWithMask(bytes, 0xfff);
+  const sum = sumWithMask(bytes, 0xff);
   return checkCarry(sum, 8);
 };
 
@@ -201,7 +205,7 @@ export const hasWordSumCarry = (...words: number[]) => {
 };
 
 export const hasByteSumHalfCarry = (...bytes: number[]) => {
-  const sum = sumWithMask(bytes, 0xfff);
+  const sum = sumWithMask(bytes, 0xf);
   return checkCarry(sum, 4);
 };
 
@@ -212,7 +216,7 @@ export const hasWordSumHalfCarry = (...words: number[]) => {
 
 function sumWithMask(values: number[], mask: number) {
   return values.reduce((acc, cur) => {
-    const maskedCur = cur & mask;
+    const maskedCur = Math.abs(cur) & mask;
     return cur >= 0 ? acc + maskedCur : acc - maskedCur;
   }, 0);
 }

@@ -13,6 +13,10 @@ export class ClockData {
     return new ClockData(0);
   }
 
+  get isEmpty() {
+    return this.m === 0;
+  }
+
   add(clockData: ClockData) {
     return new ClockData(this.m + clockData.m);
   }

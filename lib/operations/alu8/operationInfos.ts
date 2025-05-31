@@ -86,35 +86,37 @@ const setDecrementFlags = (cpu: GameboyCpu, byte: number) => {
 
 export const decimalAdjustA: OperationInfo = {
   operation: (cpu: GameboyCpu) => {
-    const a = cpu.registers.getByte(Register8.A);
+    let a = cpu.registers.getByte(Register8.A);
     const oldFlags = cpu.registers.getFlags();
+    let correction = 0;
+    let setCarry = false;
 
-    let adjustment = 0;
-
-    if (oldFlags[Flag.HalfCarry] || toNibble(a) > 9) {
-      adjustment = 6;
+    if (!oldFlags[Flag.Negative]) {
+      if (oldFlags[Flag.HalfCarry] || (a & 0x0F) > 9) {
+        correction = 0x06;
+      }
+      if (oldFlags[Flag.Carry] || a > 0x99) {
+        correction += 0x60;
+        setCarry = true;
+      }
+      a = toByte(a + correction);
+    } else {
+      if (oldFlags[Flag.HalfCarry]) {
+        correction = 0x06;
+      }
+      if (oldFlags[Flag.Carry]) {
+        correction += 0x60;
+      }
+      a = toByte(a - correction);
     }
 
-    if (oldFlags[Flag.Carry] || a > 0x99) {
-      adjustment += 0x60;
-    }
-
-    if (oldFlags[Flag.Negative]) {
-      adjustment = -adjustment;
-    }
-
-    const resultByte = toByte(a + adjustment);
-
-    cpu.registers.setByte(Register8.A, resultByte);
-
-    const flags = {
-      [Flag.Zero]: resultByte === 0,
+    cpu.registers.setByte(Register8.A, a);
+    cpu.registers.setFlags({
+      [Flag.Zero]: a === 0,
+      [Flag.Negative]: oldFlags[Flag.Negative],
       [Flag.HalfCarry]: false,
-      [Flag.Carry]:
-        oldFlags[Flag.Carry] || (!oldFlags[Flag.Negative] && a > 0x99),
-    };
-
-    cpu.registers.setFlags(flags);
+      [Flag.Carry]: setCarry || oldFlags[Flag.Carry],
+    });
   },
   length: 1,
   clock: new ClockData(1),

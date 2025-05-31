@@ -3,9 +3,8 @@ import { Clock } from './clock.js';
 import { DEBUG, Interrupt, INTERRUPT_ADDRESS_MAPPING } from './constants.js';
 import { Memory } from './memory.js';
 import operationCodesMap from './operations/operation-codes.js';
-import referenceOpcodes from './operations/reference-opcodes.js';
 import { Register16, Register8, Registers } from './registers.js';
-import { getEnumValues, toHex, toRawHex } from './utils.js';
+import { getEnumValues, toRawHex } from './utils.js';
 
 export interface CpuParams {
   memory: Memory;
@@ -49,11 +48,6 @@ export class GameboyCpu {
     if (operationInfo === undefined) {
       throw new Error(`Unknown opcode ${opcode}`);
     }
-
-    const referenceOpcode =
-      opcode == 0xcb
-        ? referenceOpcodes.cbprefixed[toHex(this.peekByte())]
-        : referenceOpcodes.unprefixed[toHex(opcode)];
 
     operationInfo.operation(this);
     const clockData = this.hasBranched

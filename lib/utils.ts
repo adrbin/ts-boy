@@ -189,34 +189,64 @@ export const isByteSumZero = (...values: number[]) => {
   return toByte(values.reduce((acc, cur) => acc + cur, 0)) === 0;
 };
 
+export const hasByteAddCarry = (...bytes: number[]) => {
+  const sum = addWithMask(bytes, 0xff);
+  return checkCarry(sum, 8);
+};
+
+export const hasWordAddCarry = (...words: number[]) => {
+  const sum = addWithMask(words, 0xffff);
+  return checkCarry(sum, 16);
+};
+
+export const hasByteAddHalfCarry = (...bytes: number[]) => {
+  const sum = addWithMask(bytes, 0xf);
+  return checkCarry(sum, 4);
+};
+
+export const hasWordAddHalfCarry = (...words: number[]) => {
+  const sum = addWithMask(words, 0xfff);
+  return checkCarry(sum, 12);
+};
+
+function addWithMask(values: number[], mask: number) {
+  return values.reduce((acc, cur) => {
+    return acc + (cur & mask);
+  }, 0);
+}
+
+export const hasByteSubtractCarry = (...bytes: number[]) => {
+  const sum = subtractWithMask(bytes, 0xff);
+  return checkCarry(sum, 8);
+};
+
+export const hasWordSubtractCarry = (...words: number[]) => {
+  const sum = subtractWithMask(words, 0xffff);
+  return checkCarry(sum, 16);
+};
+
+export const hasByteSubtractHalfCarry = (...bytes: number[]) => {
+  const sum = subtractWithMask(bytes, 0xf);
+  return checkCarry(sum, 4);
+};
+
+export const hasWordSubtractHalfCarry = (...words: number[]) => {
+  const sum = subtractWithMask(words, 0xfff);
+  return checkCarry(sum, 12);
+};
+
+function subtractWithMask(values: number[], mask: number) {
+  return values.reduce((acc, cur) => {
+    return acc + maskSignedValue(cur, mask);
+  }, 0);
+}
+
+export function maskSignedValue(value: number, mask: number) {
+  const maskedValue = Math.abs(value) & mask;
+  return value >= 0 ? maskedValue : -maskedValue;
+}
+
 const checkCarry = (value: number, bit: number) => {
   const carryBit = 1 << bit;
   return (value & carryBit) === carryBit;
 };
-
-export const hasByteSumCarry = (...bytes: number[]) => {
-  const sum = sumWithMask(bytes, 0xff);
-  return checkCarry(sum, 8);
-};
-
-export const hasWordSumCarry = (...words: number[]) => {
-  const sum = sumWithMask(words, 0xffff);
-  return checkCarry(sum, 16);
-};
-
-export const hasByteSumHalfCarry = (...bytes: number[]) => {
-  const sum = sumWithMask(bytes, 0xf);
-  return checkCarry(sum, 4);
-};
-
-export const hasWordSumHalfCarry = (...words: number[]) => {
-  const sum = sumWithMask(words, 0xfff);
-  return checkCarry(sum, 12);
-};
-
-function sumWithMask(values: number[], mask: number) {
-  return values.reduce((acc, cur) => {
-    const maskedCur = Math.abs(cur) & mask;
-    return cur >= 0 ? acc + maskedCur : acc - maskedCur;
-  }, 0);
-}

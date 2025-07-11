@@ -33,3 +33,5 @@
 ---
 
 For AI agents: Adhere to the modular structure, respect component boundaries, and use opcode tables for CPU logic. When in doubt, follow patterns in `lib/operations/` and reference the web integration in `web/` for browser-specific logic.
+
+**Do not duplicate code.** Always try to abstract and reuse common code, especially for utility functions. If you need a helper, check `lib/utils.ts` and prefer using or extending existing functions rather than reimplementing similar logic.

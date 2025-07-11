@@ -2,10 +2,10 @@ import { ClockData } from '../../clock-data.js';
 import { GameboyCpu } from '../../gameboy-cpu.js';
 import { Flag, Register16 } from '../../registers.js';
 import {
-  hasByteSumCarry,
-  hasByteSumHalfCarry,
-  hasWordSumCarry,
-  hasWordSumHalfCarry,
+  hasByteAddCarry,
+  hasByteAddHalfCarry,
+  hasWordAddCarry,
+  hasWordAddHalfCarry,
   toSignedByte,
   toWord,
 } from '../../utils.js';
@@ -41,8 +41,8 @@ export const addRegister16ToHl = (register16: Register16): OperationInfo => {
 
       const flags = {
         [Flag.Negative]: false,
-        [Flag.HalfCarry]: hasWordSumHalfCarry(hl, word),
-        [Flag.Carry]: hasWordSumCarry(hl, word),
+        [Flag.HalfCarry]: hasWordAddHalfCarry(hl, word),
+        [Flag.Carry]: hasWordAddCarry(hl, word),
       };
 
       cpu.registers.setFlags(flags);
@@ -85,8 +85,8 @@ const setSpFlags = (cpu: GameboyCpu, sp: number, signedByte: number) => {
   const flags = {
     [Flag.Zero]: false,
     [Flag.Negative]: false,
-    [Flag.HalfCarry]: hasByteSumHalfCarry(sp, signedByte),
-    [Flag.Carry]: hasByteSumCarry(sp, signedByte),
+    [Flag.HalfCarry]: hasByteAddHalfCarry(sp, signedByte),
+    [Flag.Carry]: hasByteAddCarry(sp, signedByte),
   };
 
   cpu.registers.setFlags(flags);

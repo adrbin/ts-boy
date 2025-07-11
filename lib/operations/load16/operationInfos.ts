@@ -62,7 +62,7 @@ export const pushFromRegister16 = (register16: Register16): OperationInfo => {
 
 export const loadSpFromHl = {
   operation: (cpu: GameboyCpu) => {
-    cpu.registers.setRegister16(Register16.HL, Register16.SP);
+    cpu.registers.setRegister16(Register16.SP, Register16.HL);
   },
   length: 1,
   clock: new ClockData(2),

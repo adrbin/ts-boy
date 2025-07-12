@@ -401,6 +401,11 @@ const operationCodes: OperationCode[] = [
     operationInfo: loadRegister8FromHlAddress(Register8.A),
   },
   {
+    opcode: 0x7f,
+    mnemonic: 'LD A, A',
+    operationInfo: loadRegister8FromRegister8(Register8.A, Register8.A),
+  },
+  {
     opcode: 0xe0,
     mnemonic: 'LDH ({}), A',
     operationInfo: loadIoAddressWithByteOffsetFromRegisterA,

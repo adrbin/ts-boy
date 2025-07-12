@@ -1,10 +1,12 @@
 import { ClockData } from './clock-data.js';
 import { Clock } from './clock.js';
-import { DEBUG, Interrupt, INTERRUPT_ADDRESS_MAPPING } from './constants.js';
+import { DEBUG, Interrupt, INTERRUPT_ADDRESS_MAPPING, PREFIX_CB } from './constants.js';
 import { Memory } from './memory.js';
 import operationCodesMap from './operations/operation-codes.js';
+import prefixCbOperations from './operations/prefixCb/operationCodes.js';
 import { Register16, Register8, Registers } from './registers.js';
 import { getEnumValues, toRawHex } from './utils.js';
+import { OperationCode, OperationInfo } from './operations/operation.js';
 
 export interface CpuParams {
   memory: Memory;
@@ -42,12 +44,7 @@ export class GameboyCpu {
       const a = 0;
     }
 
-    const opcode = this.fetchByte();
-    const operationCode = operationCodesMap.get(opcode);
-    const operationInfo = operationCode?.operationInfo;
-    if (operationInfo === undefined) {
-      throw new Error(`Unknown opcode ${opcode}`);
-    }
+    const { operationCode, operationInfo } = this.#getOperation();
 
     operationInfo.operation(this);
     const clockData = this.hasBranched
@@ -58,11 +55,35 @@ export class GameboyCpu {
 
     if (clockData === undefined) {
       throw new Error(
-        `Opcode ${opcode} has branched but there is no clock data provided for the branching case`,
+        `Opcode ${operationCode?.opcode} has branched but there is no clock data provided for the branching case`,
       );
     }
 
     return clockData.add(interruptClockData);
+  }
+
+  #getOperation() {
+    const opcode = this.fetchByte();
+    const operationCode = operationCodesMap.get(opcode);
+    const operationInfo = operationCode?.operationInfo;
+    if (operationCode === undefined || operationInfo === undefined) {
+      throw new Error(`Unknown opcode ${opcode}`);
+    }
+
+    return opcode === PREFIX_CB
+      ? this.#getPrefixCbOperation()
+      : { operationCode, operationInfo };
+  }
+
+  #getPrefixCbOperation() {
+    const opcode = this.fetchByte();
+    const operationCode = prefixCbOperations.get(opcode);
+    const operationInfo = operationCode?.operationInfo;
+    if (operationCode === undefined || operationInfo === undefined) {
+      throw new Error(`Unknown prefixCb opcode ${opcode}`);
+    }
+
+    return { operationCode, operationInfo };
   }
 
   fetchByte() {

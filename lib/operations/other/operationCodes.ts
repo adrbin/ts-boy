@@ -1,3 +1,4 @@
+import { PREFIX_CB } from '../../constants.js';
 import { buildOperationCodeMap, OperationCode } from '../operation.js';
 import {
   nop,
@@ -35,7 +36,7 @@ const operationCodes: OperationCode[] = [
     operationInfo: enableInterrupts,
   },
   {
-    opcode: 0xcb,
+    opcode: PREFIX_CB,
     mnemonic: 'PREFIX CB',
     operationInfo: prefixCb,
   },

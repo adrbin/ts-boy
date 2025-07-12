@@ -4,7 +4,7 @@ import { OperationInfo } from '../operation.js';
 import prefixCbOperations from '../prefixCb/operationCodes.js';
 
 export const nop: OperationInfo = {
-  operation: () => {},
+  operation: () => { },
   length: 1,
   clock: new ClockData(1),
 };
@@ -42,15 +42,7 @@ export const enableInterrupts: OperationInfo = {
 };
 
 export const prefixCb: OperationInfo = {
-  operation: (cpu: GameboyCpu) => {
-    const opcode = cpu.fetchByte();
-    const operationInfo = prefixCbOperations.get(opcode)?.operationInfo;
-    if (operationInfo === undefined) {
-      throw new Error(`Unknown prefixCb opcode ${opcode}`);
-    }
-    operationInfo.operation(cpu);
-    cpu.clock.increment(operationInfo.clock);
-  },
+  operation: () => { },
   length: 1,
   clock: new ClockData(1),
 };

@@ -12,6 +12,7 @@ export const FRAME_TIME_IN_MS = Math.floor(1000 / FPS);
 export const ONE_SECOND_IN_MS = 1000;
 export const INPUT_DELAY = 100;
 export const DELAY_FACTOR = 10;
+export const PREFIX_CB = 0xcb;
 
 export const DISPLAY_WIDTH = 160;
 export const DISPLAY_HEIGHT = 144;

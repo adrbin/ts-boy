@@ -40,3 +40,4 @@ A Gameboy emulator written in TypeScript (work in progress).
 - http://www.devrs.com/gb/files/opcodes.html
 - https://jgmalcolm.com/z80/
 - https://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
+- https://rgbds.gbdev.io/docs/v0.9.3/gbz80.7

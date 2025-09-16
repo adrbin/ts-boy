@@ -83,7 +83,8 @@ export const shiftRightRegister8 = (
       const oldFlags = cpu.registers.getFlags();
       const carry = oldFlags[Flag.Carry] ? 1 : 0;
       const bit0 = getNthBit(byte, 0);
-      const newBit7 = getNewBit7(mode, bit0, carry);
+      const bit7 = getNthBit(byte, 7);
+      const newBit7 = getNewBit7(mode, bit0, bit7, carry);
 
       let resultByte = toByte((byte >>> 1) | newBit7);
 
@@ -104,7 +105,8 @@ export const shiftRightHlAddress = (mode: ShiftMode): OperationInfo => {
       const oldFlags = cpu.registers.getFlags();
       const carry = oldFlags[Flag.Carry] ? 1 : 0;
       const bit0 = getNthBit(byte, 0);
-      const newBit7 = getNewBit7(mode, bit0, carry);
+      const bit7 = getNthBit(byte, 7);
+      const newBit7 = getNewBit7(mode, bit0, bit7, carry);
 
       let resultByte = toByte((byte >>> 1) | newBit7);
 
@@ -117,10 +119,10 @@ export const shiftRightHlAddress = (mode: ShiftMode): OperationInfo => {
   };
 };
 
-const getNewBit7 = (mode: ShiftMode, bit0: number, carry: number) => {
+const getNewBit7 = (mode: ShiftMode, bit0: number, bit7: number, carry: number) => {
   switch (mode) {
     case ShiftMode.Arithmetic:
-      return 1 << 7;
+      return bit7 << 7;
     case ShiftMode.Rotate:
       return bit0 << 7;
     case ShiftMode.RotateThroughCarry:

@@ -1,175 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <link rel="manifest" href="manifest.webmanifest" />
-    <title>ts-boy</title>
-    <style>
-      html,
-      body {
-        margin: 0;
-        border: 0;
-        box-sizing: border-box;
-        overflow: hidden;
-        touch-action: none;
-      }
 
-      body {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>ts-boy</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      border: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+      touch-action: none;
+    }
 
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      width: 100%;
+      max-width: 700px;
+      height: 100vh;
+    }
+
+    #game-canvas {
+      aspect-ratio: calc(166 / 144);
+      touch-action: none;
+      max-width: 100%;
+      max-height: 50%;
+      flex: 1;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      width: 100%;
+      /* height: 100%; */
+    }
+
+    button,
+    select,
+    .rom-label {
+      color: rgb(29, 152, 229);
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      width: 100%;
+      font-size: 18px;
+      margin: 10px;
+    }
+
+    #rom-file-input {
+      display: none;
+      font-size: 1em;
+    }
+
+    .rom-label,
+    .options button,
+    .options select {
+      padding: 5px 10px;
+      background-color: rgb(244, 244, 244);
+      border: 1px ridge black;
+      height: auto;
+      margin-left: 5px;
+      margin-right: 5px;
+      margin-top: 2px;
+      font-size: 1em;
+      width: auto;
+    }
+
+    .rom-label {
+      text-align: center;
+      margin-bottom: 2px;
+    }
+
+    .options label {
+      font-size: 1em;
+      margin-left: 3px;
+    }
+
+    .checkbox-container {
+      margin-top: 8px;
+    }
+
+    .rom-label:hover,
+    .options button:hover {
+      background-color: rgb(219, 219, 219);
+    }
+
+    .rom-label:active,
+    .options button:active {
+      background-color: rgb(205, 205, 205);
+    }
+
+    button {
+      font-size: 18px;
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
       .main-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
-        width: 100%;
-        max-width: 700px;
-        height: 100vh;
-      }
-
-      #game-canvas {
-        aspect-ratio: calc(166 / 144);
-        touch-action: none;
-        max-width: 100%;
-        max-height: 50%;
-        flex: 1;
-      }
-
-      .buttons {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        width: 100%;
-        /* height: 100%; */
-      }
-
-      button,
-      select,
-      .rom-label {
-        color: rgb(29, 152, 229);
+        flex-direction: row;
+        max-width: none;
       }
 
       .options {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        width: 100%;
-        font-size: 18px;
-        margin: 10px;
+        grid-template-columns: none;
+        grid-template-rows: repeat(3, 1fr);
       }
+    }
+  </style>
+</head>
 
-      #rom-file-input {
-        display: none;
-        font-size: 1em;
-      }
+<body>
+  <div class="main-container">
+    <canvas id="game-canvas"></canvas>
+    <section class="options">
+      <div>
+        <label for="rom-select">ROM</label>
+        <select id="rom-select"></select>
+      </div>
 
-      .rom-label,
-      .options button,
-      .options select {
-        padding: 5px 10px;
-        background-color: rgb(244, 244, 244);
-        border: 1px ridge black;
-        height: auto;
-        margin-left: 5px;
-        margin-right: 5px;
-        margin-top: 2px;
-        font-size: 1em;
-        width: auto;
-      }
+      <div>
+        <label for="mode-select">Mode</label>
+        <select id="mode-select">
+          <option value="gb">GB</option>
+          <option value="gbc">GBC</option>
+        </select>
+      </div>
 
-      .rom-label {
-        text-align: center;
-        margin-bottom: 2px;
-      }
+      <div class="checkbox-container">
+        <label for="fps-checkbox">Show FPS</label>
+        <input type="checkbox" id="fps-checkbox" />
+        <span id="fps-text"></span>
+      </div>
 
-      .options label {
-        font-size: 1em;
-        margin-left: 3px;
-      }
+      <label for="rom-file-input" class="rom-label">Upload a rom</label>
+      <input type="file" id="rom-file-input" />
 
-      .checkbox-container {
-        margin-top: 8px;
-      }
+      <button id="run-button">Run</button>
+      <button id="pause-button">Pause</button>
+      <button id="download-state-logs-button">Download State Logs</button>
+      <button id="download-operation-logs-button">Download Operation Logs</button>
+    </section>
+    <section class="buttons">
+      <div id="direction-pad">
+        <button id="Up-button" type="button">⬆</button>
+        <button id="Left-button" type="button">⬅</button>
+        <button id="Down-button" type="button">⬇</button>
+        <button id="Right-button" type="button">➡️</button>
+      </div>
+      <div id="controls">
+        <button id="Start-button" type="button">Start</button>
+        <button id="Select-button" type="button">Select</button>
+      </div>
+      <div id="action-pad">
+        <button id="A-button" type="button">A</button>
+        <button id="B-button" type="button">B</button>
+      </div>
+    </section>
+  </div>
 
-      .rom-label:hover,
-      .options button:hover {
-        background-color: rgb(219, 219, 219);
-      }
+  <script src="web/ts-boy-web.js" type="module"></script>
+</body>
 
-      .rom-label:active,
-      .options button:active {
-        background-color: rgb(205, 205, 205);
-      }
-
-      button {
-        font-size: 18px;
-      }
-
-      @media (max-height: 500px) and (orientation: landscape) {
-        .main-container {
-          flex-direction: row;
-          max-width: none;
-        }
-
-        .options {
-          grid-template-columns: none;
-          grid-template-rows: repeat(3, 1fr);
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="main-container">
-      <canvas id="game-canvas"></canvas>
-      <section class="options">
-        <div>
-          <label for="rom-select">ROM</label>
-          <select id="rom-select"></select>
-        </div>
-
-        <div>
-          <label for="mode-select">Mode</label>
-          <select id="mode-select">
-            <option value="gb">GB</option>
-            <option value="gbc">GBC</option>
-          </select>
-        </div>
-
-        <div class="checkbox-container">
-          <label for="fps-checkbox">Show FPS</label>
-          <input type="checkbox" id="fps-checkbox" />
-          <span id="fps-text"></span>
-        </div>
-
-        <label for="rom-file-input" class="rom-label">Upload a rom</label>
-        <input type="file" id="rom-file-input" />
-
-        <button id="run-button">Run</button>
-        <button id="pause-button">Pause</button>
-      </section>
-      <section class="buttons">
-        <div id="direction-pad">
-          <button id="Up-button" type="button">⬆</button>
-          <button id="Left-button" type="button">⬅</button>
-          <button id="Down-button" type="button">⬇</button>
-          <button id="Right-button" type="button">➡️</button>
-        </div>
-        <div id="controls">
-          <button id="Start-button" type="button">Start</button>
-          <button id="Select-button" type="button">Select</button>
-        </div>
-        <div id="action-pad">
-          <button id="A-button" type="button">A</button>
-          <button id="B-button" type="button">B</button>
-        </div>
-      </section>
-    </div>
-
-    <script src="web/ts-boy-web.js" type="module"></script>
-  </body>
 </html>

@@ -39,6 +39,10 @@ async function main() {
     await gameboyEmulator.stop();
   }
 
+  if (pauseButton.textContent === RESUME_TEXT) {
+    pauseButton.innerText = PAUSE_TEXT;
+  }
+
   const romName = (romSelect[romSelect.selectedIndex] as HTMLOptionElement)
     .value;
 
@@ -161,8 +165,20 @@ function initUi() {
   if (!pauseButton) {
     throw new Error(`Pause button has not been found`);
   }
-
   pauseButton.addEventListener('click', pauseRom);
+
+  // Download log buttons
+  const downloadStateLogsButton = document.getElementById('download-state-logs-button') as HTMLButtonElement;
+  if (!downloadStateLogsButton) {
+    throw new Error(`Download State Logs button has not been found`);
+  }
+  downloadStateLogsButton.addEventListener('click', downloadStateLogs);
+
+  const downloadOperationLogsButton = document.getElementById('download-operation-logs-button') as HTMLButtonElement;
+  if (!downloadOperationLogsButton) {
+    throw new Error(`Download Operation Logs button has not been found`);
+  }
+  downloadOperationLogsButton.addEventListener('click', downloadOperationLogs);
 }
 
 async function loadRom() {
@@ -186,10 +202,10 @@ async function pauseRom() {
   if (pauseButton.textContent === PAUSE_TEXT) {
     pauseButton.innerText = RESUME_TEXT;
     await gameboyEmulator.stop();
-    if (DEBUG) {
-      console.log(gameboyEmulator.cpu.operationLogs.join('\n'));
-      console.log(gameboyEmulator.cpu.stateLogs.join('\n'));
-    }
+    // if (DEBUG) {
+    //   console.log(gameboyEmulator.cpu.operationLogs.join('\n'));
+    //   console.log(gameboyEmulator.cpu.stateLogs.join('\n'));
+    // }
   } else {
     pauseButton.innerText = PAUSE_TEXT;
     await gameboyEmulator.run();
@@ -224,6 +240,44 @@ async function getRom(romName: string) {
   romCache.set(romName, rom);
 
   return rom;
+}
+
+function downloadStateLogs() {
+  if (!gameboyEmulator || !gameboyEmulator.cpu) {
+    alert('Emulator not initialized.');
+    return;
+  }
+  downloadLogArray(gameboyEmulator.cpu.stateLogs, 'stateLogs.log');
+
+  // Clear logs after download
+  gameboyEmulator.cpu.stateLogs = [];
+  gameboyEmulator.cpu.operationLogs = [];
+}
+
+function downloadOperationLogs() {
+  if (!gameboyEmulator || !gameboyEmulator.cpu) {
+    alert('Emulator not initialized.');
+    return;
+  }
+  downloadLogArray(gameboyEmulator.cpu.operationLogs, 'operationLogs.log');
+}
+
+function downloadLogArray(logArray: string[], filename: string) {
+  if (!logArray || logArray.length === 0) {
+    alert('No logs available to download.');
+    return;
+  }
+  const blob = new Blob(logArray, { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
 }
 
 initUi();

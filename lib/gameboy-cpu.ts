@@ -199,7 +199,7 @@ export class GameboyCpu {
     )},${toRawHex(pcmem3)}`;
 
     if (log !== this.stateLogs[this.stateLogs.length - 1]) {
-      this.stateLogs.push(log);
+      this.stateLogs.push(`${log}\n`);
     }
   }
 
@@ -208,6 +208,6 @@ export class GameboyCpu {
       '{}',
       this.lastFetchedValue.toString(),
     );
-    this.operationLogs.push(textOperation);
+    this.operationLogs.push(`${textOperation}\n`);
   }
 }

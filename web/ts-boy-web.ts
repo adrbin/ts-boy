@@ -6,17 +6,18 @@ import {
   DISPLAY_WIDTH,
   FRAME_LENGTH_IN_M,
   KEY_MAPPING,
+  LOGGING_ENABLED,
   ROMS,
 } from '../lib/constants.js';
 import { GameboyCpu } from '../lib/gameboy-cpu.js';
 import { Memory } from '../lib/memory.js';
 import { Clock } from '../lib/clock.js';
 import { GameboyGpu } from '../lib/gameboy-gpu.js';
-import { ClockData } from '../lib/clock-data.js';
 import { Input } from '../lib/input.js';
 import { WebButtonInputHandler } from './web-button-input.js';
 import { WebKeyboardInputHandler } from './web-keyboard-input.js';
 import { Register16, Register8 } from '../lib/registers.js';
+import { Timer } from '../lib/timer.js';
 
 const PAUSE_TEXT = 'Pause';
 const RESUME_TEXT = 'Resume';
@@ -57,17 +58,20 @@ async function main() {
   const memory = new Memory(bios, rom);
   input.memory = memory;
 
-  const clock = new Clock(new ClockData(), FRAME_LENGTH_IN_M);
+  const clock = new Clock(FRAME_LENGTH_IN_M);
 
   const cpu = new GameboyCpu({ memory, clock });
 
   const gpu = new GameboyGpu({ imageData: renderer.image.data, memory, clock });
 
+  const timer = new Timer(memory);
+
   gameboyEmulator = new GameboyEmulator({
     cpu,
+    renderer,
     gpu,
     clock,
-    renderer,
+    timer,
   });
 
   debug();
@@ -91,7 +95,7 @@ function debug() {
 
   gameboyEmulator.cpu.memory.unloadBios();
 
-  gameboyEmulator.cpu.log();
+  if (LOGGING_ENABLED) gameboyEmulator.cpu.log();
 }
 
 function initUi() {

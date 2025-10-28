@@ -1,9 +1,9 @@
-import { FRAME_LENGTH, FRAME_TIME_IN_MS } from './constants.js';
+import { FRAME_TIME_IN_MS } from './constants.js';
 import { delay } from './utils.js';
 import { GameboyCpu } from './gameboy-cpu.js';
 import { Clock } from './clock.js';
 import { GameboyGpu } from './gameboy-gpu.js';
-import { ClockData } from './clock-data.js';
+import { Timer } from './timer.js';
 
 export interface Renderer {
   draw: () => Promise<void> | void;
@@ -25,23 +25,26 @@ export interface Storage {
 
 export interface GameboyEmulatorParams {
   cpu: GameboyCpu;
+  renderer: Renderer;
   gpu: GameboyGpu;
   clock: Clock;
-  renderer: Renderer;
+  timer: Timer;
 }
 
 export class GameboyEmulator {
   cpu: GameboyCpu;
-  #gpu: GameboyGpu;
-  #clock = new Clock(new ClockData(), FRAME_LENGTH);
   renderer: Renderer;
+  #gpu: GameboyGpu;
+  #clock: Clock;
+  #timer: Timer;
   #isStopped = false;
 
-  constructor({ cpu, gpu, clock, renderer }: GameboyEmulatorParams) {
+  constructor({ cpu, renderer, gpu, clock, timer }: GameboyEmulatorParams) {
     this.cpu = cpu;
+    this.renderer = renderer;
     this.#gpu = gpu;
     this.#clock = clock;
-    this.renderer = renderer;
+    this.#timer = timer;
   }
 
   async run() {
@@ -52,6 +55,7 @@ export class GameboyEmulator {
 
       const clockData = this.cpu.step();
       this.#gpu.step();
+      this.#timer.step(clockData);
 
       this.#clock.increment(clockData);
 

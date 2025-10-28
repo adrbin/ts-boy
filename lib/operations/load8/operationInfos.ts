@@ -134,7 +134,7 @@ export const loadIoAddressWithByteOffsetFromRegisterA = {
   clock: new ClockData(3),
 };
 
-export const loadRegisterAFromIoAddressWithByteOffset = {
+export const loadAFromIoAddressWithByteOffset = {
   operation: (cpu: GameboyCpu) => {
     const offset = cpu.fetchByte();
     const address = 0xff00 + offset;

@@ -1,3 +1,5 @@
+import { TFACTOR } from "./constants.js";
+
 export class ClockData {
   m = 0;
 
@@ -6,11 +8,11 @@ export class ClockData {
   }
 
   get t() {
-    return this.m * 4;
+    return this.m * TFACTOR;
   }
 
   static empty() {
-    return new ClockData(0);
+    return new ClockData();
   }
 
   get isEmpty() {

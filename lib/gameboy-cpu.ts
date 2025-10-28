@@ -1,12 +1,11 @@
 import { ClockData } from './clock-data.js';
 import { Clock } from './clock.js';
-import { DEBUG, Interrupt, INTERRUPT_ADDRESS_MAPPING, PREFIX_CB } from './constants.js';
+import { Interrupt, INTERRUPT_ADDRESS_MAPPING, LOGGING_ENABLED, PREFIX_CB } from './constants.js';
 import { Memory } from './memory.js';
 import operationCodesMap from './operations/operation-codes.js';
 import prefixCbOperations from './operations/prefixCb/operationCodes.js';
 import { Register16, Register8, Registers } from './registers.js';
 import { getEnumValues, toRawHex } from './utils.js';
-import { OperationCode, OperationInfo } from './operations/operation.js';
 
 export interface CpuParams {
   memory: Memory;
@@ -34,7 +33,7 @@ export class GameboyCpu {
     const interruptClockData = this.#checkInterrupts();
 
     if (this.isHalted) {
-      return interruptClockData;
+      return new ClockData(1);
     }
 
     this.hasBranched = false;
@@ -139,27 +138,28 @@ export class GameboyCpu {
       if (ies[interrupt] && ifs[interrupt]) {
         return this.#handleInterrupt(interrupt);
       }
-
-      if (this.isHalted && ifs[interrupt]) {
-        this.isHalted = false;
-        return ClockData.empty();
-      }
     }
 
     return ClockData.empty();
   }
 
   #handleInterrupt(interrupt: Interrupt) {
-    this.pushSp(Register16.PC);
-
-    const interruptAddress = INTERRUPT_ADDRESS_MAPPING[interrupt];
-    this.registers.setWord(Register16.PC, interruptAddress);
-
     this.isHalted = false;
-    this.ime = false;
-    this.memory.setIf({ [interrupt]: false });
 
-    return new ClockData(5);
+    if (this.ime) {
+      this.pushSp(Register16.PC);
+
+      const interruptAddress = INTERRUPT_ADDRESS_MAPPING[interrupt];
+      this.registers.setWord(Register16.PC, interruptAddress);
+
+      this.memory.setIf({ [interrupt]: false });
+
+      this.ime = false;
+
+      return new ClockData(5);
+    }
+
+    return ClockData.empty();
   }
 
   log(mnemonic?: string) {
@@ -170,7 +170,7 @@ export class GameboyCpu {
   }
 
   #logState() {
-    if (!DEBUG) return;
+    if (!LOGGING_ENABLED) return;
 
     const a = this.registers.getByte(Register8.A);
     const f = this.registers.getByte(Register8.F);
@@ -204,6 +204,8 @@ export class GameboyCpu {
   }
 
   #logOperation(mnemonic: string) {
+    if (!LOGGING_ENABLED) return;
+
     const textOperation = mnemonic.replace(
       '{}',
       this.lastFetchedValue.toString(),

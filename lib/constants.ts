@@ -1,4 +1,5 @@
 export const DEBUG = true;
+export const LOGGING_ENABLED = true;
 
 export const KILOBYTE = 2 ^ 10;
 export const MEMORY_SIZE = 64 * KILOBYTE;
@@ -30,7 +31,10 @@ export const TILE_SIZE = 16;
 export const OAM_COUNT = 40;
 export const OAM_SIZE = 4;
 export const TILE_MAP_LENGTH = 32;
+export const DIV_FREQUENCY = 256;
+export const TIMA_FREQUENCIES = [256, 4, 16, 64];
 
+// LCD addresses
 export const LCD_CONTROL_ADDRESS = 0xff40;
 export const SCY_ADDRESS = 0xff42;
 export const SCX_ADDRESS = 0xff43;
@@ -46,9 +50,18 @@ export const TILE_DATA_ADDRESS = 0x8000;
 export const TILE_MAP0_ADDRESS = 0x9800;
 export const TILE_MAP1_ADDRESS = 0x9c00;
 export const OAM_ADDRESS = 0xfe00;
+
 export const INPUT_ADDRESS = 0xff00;
+
+// Interrupt addresses
 export const IE_ADDRESS = 0xffff;
 export const IF_ADDRESS = 0xff0f;
+
+// Timer addresses
+export const DIV_ADDRESS = 0xff04;
+export const TIMA_ADDRESS = 0xff05;
+export const TMA_ADDRESS = 0xff06;
+export const TAC_ADDRESS = 0xff07;
 
 export enum Interrupt {
   VBlank = 0,

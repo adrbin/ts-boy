@@ -1,6 +1,7 @@
 import {
   BGP_ADDRESS,
   DEBUG,
+  DIV_ADDRESS,
   IE_ADDRESS,
   IF_ADDRESS,
   Interrupt,
@@ -13,6 +14,9 @@ import {
   SCX_ADDRESS,
   SCY_ADDRESS,
   STAT_ADDRESS,
+  TAC_ADDRESS,
+  TIMA_ADDRESS,
+  TMA_ADDRESS,
   WX_ADDRESS,
   WY_ADDRESS,
 } from './constants.js';
@@ -44,6 +48,11 @@ export enum Stat {
 }
 
 export type Stats = Record<Stat, boolean>;
+
+export type TimeControl = {
+  enabled: boolean;
+  clockSelect: number;
+};
 
 export class Memory {
   isBiosLoaded = true;
@@ -180,6 +189,35 @@ export class Memory {
   get obp1() {
     const byte = this.getByte(OBP1_ADDRESS);
     return this.#getPalette(byte);
+  }
+
+  get div() {
+    return this.getByte(DIV_ADDRESS);
+  }
+
+  set div(byte: number) {
+    this.setByte(DIV_ADDRESS, byte);
+  }
+
+  get tima() {
+    return this.getByte(TIMA_ADDRESS);
+  }
+
+  set tima(byte: number) {
+    this.setByte(TIMA_ADDRESS, byte);
+  }
+
+  get tma() {
+    return this.getByte(TMA_ADDRESS);
+  }
+
+  get tac(): Readonly<TimeControl> {
+    const byte = this.getByte(TAC_ADDRESS);
+
+    return {
+      enabled: (byte & 0x04) !== 0,
+      clockSelect: byte & 0x03,
+    };
   }
 
   #getPalette(byte: number) {

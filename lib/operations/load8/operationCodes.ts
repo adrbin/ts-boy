@@ -12,7 +12,7 @@ import {
   loadRegister8FromHlAddress,
   loadHlAddressFromRegister8,
   loadIoAddressWithByteOffsetFromRegisterA,
-  loadRegisterAFromIoAddressWithByteOffset,
+  loadAFromIoAddressWithByteOffset,
   loadIoAddressWithCOffsetFromA,
   loadAFromIoAddressWithCOffset,
   loadAddressFromA,
@@ -412,8 +412,8 @@ const operationCodes: OperationCode[] = [
   },
   {
     opcode: 0xf0,
-    mnemonic: 'LDH {}, A',
-    operationInfo: loadRegisterAFromIoAddressWithByteOffset,
+    mnemonic: 'LDH A, ({})',
+    operationInfo: loadAFromIoAddressWithByteOffset,
   },
   {
     opcode: 0xe2,

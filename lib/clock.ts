@@ -1,13 +1,13 @@
 import { ClockData } from './clock-data.js';
 
 export class Clock {
+  max?: number;
   #clockData: ClockData;
   hasReset = false;
-  max?: number;
 
-  constructor(clockData = new ClockData(), max?: number) {
-    this.#clockData = clockData;
+  constructor(max?: number, clockData = new ClockData()) {
     this.max = max;
+    this.#clockData = clockData;
   }
 
   get m() {

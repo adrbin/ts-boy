@@ -143,7 +143,7 @@ export class Registers {
   incrementWord(register16: Register16, increment = 1) {
     const currentWord = this.getWord(register16);
     const newWord = toWord(currentWord + increment);
-
+      
     this.setWord(register16, newWord);
 
     return newWord;

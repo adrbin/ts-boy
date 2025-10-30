@@ -79,7 +79,7 @@ const operationCodes: OperationCode[] = [
   },
   {
     opcode: 0xc3,
-    mnemonic: 'JP ',
+    mnemonic: 'JP {}',
     operationInfo: jumpWithCondition(_ => true),
   },
   {

@@ -1,7 +1,7 @@
-export const DEBUG = true;
+export const DEBUG = false;
 export const LOGGING_ENABLED = true;
 
-export const KILOBYTE = 2 ^ 10;
+export const KILOBYTE = 2 ** 10;
 export const MEMORY_SIZE = 64 * KILOBYTE;
 export const PROGRAM_START = 512;
 export const BYTE_LENGTH = 8;

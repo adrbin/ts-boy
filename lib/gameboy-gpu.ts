@@ -68,6 +68,9 @@ export class GameboyGpu {
   mode = Mode.OamScan;
   dot = 0;
   y = 0;
+  #wasVBlankSet = false;
+  #previousMode = Mode.OamScan;
+  #previousLy = 0;
 
   constructor({ imageData, memory, clock }: GpuParams) {
     this.imageData = imageData;
@@ -78,20 +81,24 @@ export class GameboyGpu {
   }
 
   reset() {
+    this.mode = Mode.OamScan;
+    this.#wasVBlankSet = false;
+    this.memory.setIf({ [Interrupt.VBlank]: false });
+
     const color = colors[0];
     for (let pixel = 0; pixel < DISPLAY_WIDTH * DISPLAY_HEIGHT; pixel++) {
       for (let i = 0; i < RGBA_SIZE; i++) {
         this.imageData[pixel * RGBA_SIZE + i] = color[i];
       }
     }
-
-    this.memory.setIf({ [Interrupt.VBlank]: false });
   }
 
   step() {
     this.#checkMode();
     this.#setStats();
     this.#setStatInterrupt();
+    this.#previousMode = this.mode;
+    this.#previousLy = this.memory.ly;
   }
 
   #checkMode() {
@@ -99,14 +106,16 @@ export class GameboyGpu {
     this.dot = this.clock.t % FRAME_LINE_LENGTH;
 
     if (this.clock.hasReset) {
-      this.mode = Mode.OamScan;
       this.reset();
       return;
     }
 
     if (this.y >= DISPLAY_HEIGHT) {
-      this.mode = Mode.VBlank;
-      this.memory.setIf({ [Interrupt.VBlank]: true });
+      if (!this.#wasVBlankSet) {
+        this.mode = Mode.VBlank;
+        this.memory.setIf({ [Interrupt.VBlank]: true });
+        this.#wasVBlankSet = true;
+      }
       return;
     }
 
@@ -130,27 +139,26 @@ export class GameboyGpu {
   }
 
   #setStats() {
+    const lcdControls = this.memory.getLcdControls();
     this.memory.ly = this.y;
     this.memory.setStats({
       [Stat.LycFlag]: this.memory.lyc === this.y,
-      [Stat.ModeFlagBit0]: getNthBitFlag(this.mode, 0),
-      [Stat.ModeFlagBit1]: getNthBitFlag(this.mode, 1),
+      [Stat.ModeFlagBit0]: lcdControls[LcdControl.LcdEnable] && getNthBitFlag(this.mode, 0),
+      [Stat.ModeFlagBit1]: lcdControls[LcdControl.LcdEnable] && getNthBitFlag(this.mode, 1),
     });
   }
 
   #setStatInterrupt() {
     const stats = this.memory.getStats();
-    let statInterrupt = false;
+    const ly = this.memory.ly;
     if (
-      (stats[Stat.HBlankInterrupt] && this.mode === Mode.HBlank) ||
-      (stats[Stat.VBlankInterrupt] && this.mode === Mode.VBlank) ||
-      (stats[Stat.OamInterrupt] && this.mode === Mode.OamScan) ||
-      (stats[Stat.LycInterrupt] && this.memory.lyc === this.memory.ly)
+      (stats[Stat.HBlankInterrupt] && this.mode === Mode.HBlank && this.mode !== this.#previousMode) ||
+      (stats[Stat.VBlankInterrupt] && this.mode === Mode.VBlank && this.mode !== this.#previousMode) ||
+      (stats[Stat.OamInterrupt] && this.mode === Mode.OamScan && this.mode !== this.#previousMode) ||
+      (stats[Stat.LycInterrupt] && this.memory.lyc === ly && ly !== this.#previousLy)
     ) {
-      statInterrupt = true;
+      this.memory.setIf({ [Interrupt.Stat]: true });
     }
-
-    this.memory.setIf({ [Interrupt.Stat]: statInterrupt });
   }
 
   #renderLine() {
@@ -219,7 +227,7 @@ export class GameboyGpu {
           tileIndex += 256;
         }
 
-        const tileLine = (this.y + this.memory.scy) & (TILE_LENGTH - 1);
+        const tileLine = (this.y - windowY) & (TILE_LENGTH - 1);
         tileData = this.#getTileData(tileIndex, tileLine);
       }
 
@@ -233,41 +241,46 @@ export class GameboyGpu {
       return;
     }
 
-    const palette = this.memory.bgp;
     const objSize = lcdControls[LcdControl.ObjSize];
 
     for (let i = 0; i < OAM_COUNT; i++) {
       const oam = this.#getOam(i);
       const oamY = oam.y - 16;
-      const oamX = oam.y - 8;
+      const oamX = oam.x - 8;
       const oamHeight = objSize ? 2 * TILE_LENGTH : TILE_LENGTH;
 
-      if (this.y >= oamY && this.y <= oamY + oamHeight) {
+      // Skip if current scanline is outside sprite vertical range
+      if (this.y < oamY || this.y >= oamY + oamHeight) {
         continue;
       }
 
       const priority = oam.flags[OamFlag.Priority];
       const yFlip = oam.flags[OamFlag.YFlip];
       const xFlip = oam.flags[OamFlag.XFlip];
+      const usesObp1 = oam.flags[OamFlag.DmgPalette] !== 0;
+      const palette = usesObp1 ? this.memory.obp1 : this.memory.obp0;
 
       const tileIndex = objSize ? oam.tileIndex & 0xfe : oam.tileIndex;
       const tileLine = this.y - oamY;
       const transformedTileLine =
-        yFlip === 0 ? tileLine : TILE_LENGTH - tileLine;
+        yFlip === 0 ? tileLine : (TILE_LENGTH - 1 - tileLine);
       const tileData = this.#getTileData(tileIndex, transformedTileLine);
 
       for (let tileX = 0; tileX < TILE_LENGTH; tileX++) {
         const x = oamX + tileX;
         if (x < 0 || x >= DISPLAY_WIDTH) break;
 
-        if (priority === 0 || row[x + tileX] === 0) {
-          const transformedTileX = xFlip === 0 ? tileX : TILE_LENGTH - tileX;
+        if (priority === 0 || row[x] === 0) {
+          const transformedTileX = xFlip === 0 ? tileX : (TILE_LENGTH - 1 - tileX);
           const colorIndex = this.#getColorIndex(
             tileData,
             transformedTileX,
             palette,
           );
-          row[x + tileX] = colorIndex;
+          // Color index 0 is transparent for sprites
+          if (colorIndex !== 0) {
+            row[x] = colorIndex;
+          }
         }
       }
     }

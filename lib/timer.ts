@@ -42,9 +42,6 @@ export class Timer {
         if (this.#memory.tima === 0xff) {
             this.#memory.tima = this.#memory.tma;
             this.#memory.setIf({ [Interrupt.Timer]: true });
-
-            console.log(tac);
-            console.log(this.#memory.getIf());
             return;
         }
 

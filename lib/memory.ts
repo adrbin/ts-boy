@@ -2,6 +2,8 @@ import {
   BGP_ADDRESS,
   DEBUG,
   DIV_ADDRESS,
+  DMA_TRANSFER_ADDRESS,
+  DMA_TRANSFER_LENGTH,
   IE_ADDRESS,
   IF_ADDRESS,
   Interrupt,
@@ -9,6 +11,7 @@ import {
   LCD_CONTROL_ADDRESS,
   LY_ADDRESS,
   LYC_ADDRESS,
+  OAM_ADDRESS,
   OBP0_ADDRESS,
   OBP1_ADDRESS,
   SCX_ADDRESS,
@@ -23,6 +26,8 @@ import {
 import { IMemorySegment, MemorySegment } from './memory-segment.js';
 import { MemorySegmentMirror } from './memory-segment-mirror.js';
 import { getByteToFlagsObject, setByteFromFlagsObject } from './utils.js';
+import { Clock } from './clock.js';
+import { ClockData } from './clock-data.js';
 
 export enum LcdControl {
   BgEnable = 0,
@@ -58,6 +63,7 @@ export class Memory {
   isBiosLoaded = true;
   bios: MemorySegment;
   rom: MemorySegment;
+  clock: Clock;
   #vram = new MemorySegment(0x8000, 0x2000);
   #eram = new MemorySegment(0xa000, 0x2000);
   #wram = new MemorySegment(0xc000, 0x2000);
@@ -68,7 +74,8 @@ export class Memory {
 
   #memorySegments: IMemorySegment[];
 
-  constructor(bios: Uint8Array, rom: Uint8Array | undefined = undefined) {
+  constructor(clock: Clock, bios: Uint8Array, rom: Uint8Array | undefined = undefined) {
+    this.clock = clock;
     this.bios = new MemorySegment(0, 0x100, bios);
     this.rom = new MemorySegment(0, 0x8000, rom);
     this.#memorySegments = [
@@ -98,6 +105,11 @@ export class Memory {
     if (DEBUG && address === LY_ADDRESS) {
       value = 0x90;
     }
+
+    if (address === DMA_TRANSFER_ADDRESS) {
+      this.#transferDma();
+    }
+
     const memorySegment = this.#getMemorySegment(address);
     memorySegment.setByteRelative(address, value);
   }
@@ -105,6 +117,19 @@ export class Memory {
   setWord(address: number, value: number) {
     const memorySegment = this.#getMemorySegment(address);
     memorySegment.setWordRelative(address, value);
+  }
+
+  #transferDma() {
+    const dmaTransferByte = this.getByte(DMA_TRANSFER_ADDRESS);
+    const sourceAddress = dmaTransferByte << 8;
+    const targetAddress = OAM_ADDRESS;
+
+    for (let i = 0; i < DMA_TRANSFER_LENGTH; i++) {
+      const byte = this.getByte(sourceAddress + i);
+      this.setByte(targetAddress + i, byte);
+    }
+
+    this.clock.increment(new ClockData(DMA_TRANSFER_LENGTH));
   }
 
   getLcdControls() {

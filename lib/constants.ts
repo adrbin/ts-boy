@@ -1,5 +1,5 @@
 export const DEBUG = false;
-export const LOGGING_ENABLED = true;
+export const LOGGING_ENABLED = false;
 
 export const KILOBYTE = 2 ** 10;
 export const MEMORY_SIZE = 64 * KILOBYTE;
@@ -33,6 +33,7 @@ export const OAM_SIZE = 4;
 export const TILE_MAP_LENGTH = 32;
 export const DIV_FREQUENCY = 256;
 export const TIMA_FREQUENCIES = [256, 4, 16, 64];
+export const DMA_TRANSFER_LENGTH = 0xA0;
 
 // LCD addresses
 export const LCD_CONTROL_ADDRESS = 0xff40;
@@ -50,6 +51,7 @@ export const TILE_DATA_ADDRESS = 0x8000;
 export const TILE_MAP0_ADDRESS = 0x9800;
 export const TILE_MAP1_ADDRESS = 0x9c00;
 export const OAM_ADDRESS = 0xfe00;
+export const DMA_TRANSFER_ADDRESS = 0xff46;
 
 export const INPUT_ADDRESS = 0xff00;
 
@@ -105,5 +107,10 @@ export const ROMS = [
   'roms/10-bit ops.gb',
   'roms/11-op a,(hl).gb',
   'roms/cpu_instrs.gb',
+  'roms/interrupt_time.gb',
+  'roms/instr_timing.gb',
   'roms/tetris.gb',
+  'roms/adjtris.gb',
+  'roms/opus5.gb',
+  'roms/ttt.gb',
 ];

@@ -37,7 +37,7 @@ const input = new Input();
 
 async function main() {
   if (gameboyEmulator) {
-    await gameboyEmulator.stop();
+    gameboyEmulator.stop();
   }
 
   if (pauseButton.textContent === RESUME_TEXT) {
@@ -76,7 +76,7 @@ async function main() {
 
   debug();
 
-  await gameboyEmulator.run();
+  gameboyEmulator.run();
 }
 
 function debug() {
@@ -202,17 +202,13 @@ async function loadRom() {
   romSelect.appendChild(option);
 }
 
-async function pauseRom() {
+function pauseRom() {
   if (pauseButton.textContent === PAUSE_TEXT) {
     pauseButton.innerText = RESUME_TEXT;
-    await gameboyEmulator.stop();
-    // if (DEBUG) {
-    //   console.log(gameboyEmulator.cpu.operationLogs.join('\n'));
-    //   console.log(gameboyEmulator.cpu.stateLogs.join('\n'));
-    // }
+    gameboyEmulator.stop();
   } else {
     pauseButton.innerText = PAUSE_TEXT;
-    await gameboyEmulator.run();
+    gameboyEmulator.run();
   }
 }
 

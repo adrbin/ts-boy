@@ -1,12 +1,10 @@
-import { FRAME_TIME_IN_MS } from './constants.js';
-import { delay } from './utils.js';
 import { GameboyCpu } from './gameboy-cpu.js';
 import { Clock } from './clock.js';
 import { GameboyGpu } from './gameboy-gpu.js';
 import { Timer } from './timer.js';
 
 export interface Renderer {
-  draw: () => Promise<void> | void;
+  draw: () => void;
 }
 
 export interface Audio {
@@ -47,32 +45,23 @@ export class GameboyEmulator {
     this.#timer = timer;
   }
 
-  async run() {
-    this.#isStopped = false;
-
-    while (!this.#isStopped) {
-      const loopStart = Date.now();
-
+  run() {
+    do {
       const clockData = this.cpu.step();
       this.#gpu.step();
       this.#timer.step(clockData);
 
       this.#clock.increment(clockData);
+    } while (!this.#clock.hasReset);
 
-      if (this.#clock.hasReset || this.cpu.isHalted) {
-        await this.renderer.draw();
-        const msSinceLoopStart = Date.now() - loopStart;
-        const remainingMsInFrame = Math.max(
-          0,
-          FRAME_TIME_IN_MS - msSinceLoopStart,
-        );
-        await delay(remainingMsInFrame);
-      }
+    this.renderer.draw();
+
+    if (!this.#isStopped) {
+      requestAnimationFrame(() => this.run());
     }
   }
 
-  async stop() {
+  stop() {
     this.#isStopped = true;
-    await delay();
   }
 }

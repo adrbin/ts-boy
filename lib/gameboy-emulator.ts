@@ -46,6 +46,11 @@ export class GameboyEmulator {
   }
 
   run() {
+    this.#isStopped = false;
+    this.stepFrame();
+  }
+
+  stepFrame() {
     do {
       const clockData = this.cpu.step();
       this.#gpu.step();
@@ -57,7 +62,7 @@ export class GameboyEmulator {
     this.renderer.draw();
 
     if (!this.#isStopped) {
-      requestAnimationFrame(() => this.run());
+      requestAnimationFrame(() => this.stepFrame());
     }
   }
 

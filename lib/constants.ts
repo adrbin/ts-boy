@@ -84,17 +84,19 @@ export const INTERRUPT_ADDRESS_MAPPING = {
 };
 
 export const KEY_MAPPING: { [key: string]: string } = {
-  ArrowUp: 'Up',
-  ArrowLeft: 'Left',
-  ArrowDown: 'Down',
-  ArrowRight: 'Right',
-  a: 'A',
-  s: 'B',
+  arrowup: 'Up',
+  arrowleft: 'Left',
+  arrowdown: 'Down',
+  arrowright: 'Right',
+  z: 'A',
+  x: 'B',
   ' ': 'Start',
   c: 'Select',
 };
 
 export const ROMS = [
+  'roms/drMario.gb',
+  'roms/tetris.gb',
   'roms/01-special.gb',
   'roms/02-interrupts.gb',
   'roms/03-op sp,hl.gb',
@@ -109,7 +111,6 @@ export const ROMS = [
   'roms/cpu_instrs.gb',
   'roms/interrupt_time.gb',
   'roms/instr_timing.gb',
-  'roms/tetris.gb',
   'roms/adjtris.gb',
   'roms/opus5.gb',
   'roms/ttt.gb',

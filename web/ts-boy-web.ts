@@ -55,10 +55,10 @@ async function main() {
   const biosBuffer = await biosResponse.arrayBuffer();
   const bios = new Uint8Array(biosBuffer);
 
-  const memory = new Memory(bios, rom);
-  input.memory = memory;
-
   const clock = new Clock(FRAME_LENGTH_IN_M);
+
+  const memory = new Memory({ bios, rom, clock, input });
+  input.setMemory(memory);
 
   const cpu = new GameboyCpu({ memory, clock });
 

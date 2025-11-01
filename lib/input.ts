@@ -1,6 +1,6 @@
 import { INPUT_ADDRESS, Interrupt } from './constants.js';
 import { Memory } from './memory.js';
-import { FlagsObject, getNthBit, setByteFromFlagsObject } from './utils.js';
+import { getNthBit, setByteFromFlagsObject } from './utils.js';
 
 export enum DirectionalInput {
   Right = 0,
@@ -22,20 +22,25 @@ export type ButtonInputs = Record<ButtonInput, boolean>;
 
 export class Input {
   #directionalInputs: DirectionalInputs = {
-    [DirectionalInput.Right]: false,
-    [DirectionalInput.Left]: false,
-    [DirectionalInput.Up]: false,
-    [DirectionalInput.Down]: false,
+    [DirectionalInput.Right]: true,
+    [DirectionalInput.Left]: true,
+    [DirectionalInput.Up]: true,
+    [DirectionalInput.Down]: true,
   };
 
   #buttonInputs: ButtonInputs = {
-    [ButtonInput.A]: false,
-    [ButtonInput.B]: false,
-    [ButtonInput.Select]: false,
-    [ButtonInput.Start]: false,
+    [ButtonInput.A]: true,
+    [ButtonInput.B]: true,
+    [ButtonInput.Select]: true,
+    [ButtonInput.Start]: true,
   };
 
-  memory?: Memory;
+  #memory?: Memory;
+
+  setMemory(memory: Memory) {
+    this.#memory = memory;
+    memory.setByte(INPUT_ADDRESS, 0xff);
+  }
 
   setInput(key: string, value: boolean) {
     const directionalInput =
@@ -60,8 +65,8 @@ export class Input {
     }
 
     this.#directionalInputs[directionalInput] = value;
-
-    this.#writeInput(this.#directionalInputs, 4, value);
+    this.#writeInput();
+    this.#checkInterrupt(value);
   }
 
   setButtonInput(buttonInput: ButtonInput, value: boolean) {
@@ -70,24 +75,41 @@ export class Input {
     }
 
     this.#buttonInputs[buttonInput] = value;
-
-    this.#writeInput(this.#buttonInputs, 5, value);
+    this.#writeInput();
+    this.#checkInterrupt(value);
   }
 
-  #writeInput(inputs: FlagsObject, isActiveIndex: number, value: boolean) {
-    if (!this.memory) {
+  getNewInput(input: number) {
+    const directionalInputFlag = getNthBit(input, 4);
+    const buttonInputFlag = getNthBit(input, 5);
+    if (!directionalInputFlag) {
+      return setByteFromFlagsObject(this.#directionalInputs, input);
+    }
+
+    if (!buttonInputFlag) {
+      return setByteFromFlagsObject(this.#buttonInputs, input);
+    }
+
+    return 0xff;
+  }
+
+  #writeInput() {
+    if (!this.#memory) {
       throw new Error('Memory is not set up for input.');
     }
 
-    const input = this.memory.getByte(INPUT_ADDRESS);
-    const isActive = getNthBit(input, isActiveIndex);
-    if (!isActive) {
-      const newInput = setByteFromFlagsObject(inputs, input);
-      this.memory.setByte(INPUT_ADDRESS, newInput);
+    const oldInput = this.#memory.getByte(INPUT_ADDRESS);
+    const newInput = this.getNewInput(oldInput);
+    this.#memory.setByte(INPUT_ADDRESS, newInput);
+  }
 
-      if (value) {
-        this.memory.setIf({ [Interrupt.Joypad]: true });
-      }
+  #checkInterrupt(value: boolean) {
+    if (!this.#memory) {
+      throw new Error('Memory is not set up for input.');
+    }
+
+    if (!value) {
+      this.#memory.setIf({ [Interrupt.Joypad]: true });
     }
   }
 }

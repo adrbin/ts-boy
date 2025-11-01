@@ -6,6 +6,7 @@ import {
   DMA_TRANSFER_LENGTH,
   IE_ADDRESS,
   IF_ADDRESS,
+  INPUT_ADDRESS,
   Interrupt,
   Interrupts,
   LCD_CONTROL_ADDRESS,
@@ -28,6 +29,7 @@ import { MemorySegmentMirror } from './memory-segment-mirror.js';
 import { getByteToFlagsObject, setByteFromFlagsObject } from './utils.js';
 import { Clock } from './clock.js';
 import { ClockData } from './clock-data.js';
+import { Input } from './input.js';
 
 export enum LcdControl {
   BgEnable = 0,
@@ -59,11 +61,19 @@ export type TimeControl = {
   clockSelect: number;
 };
 
+export interface MemoryParams {
+  bios: Uint8Array;
+  rom?: Uint8Array;
+  clock: Clock;
+  input: Input;
+}
+
 export class Memory {
   isBiosLoaded = true;
   bios: MemorySegment;
-  rom: MemorySegment;
-  clock: Clock;
+  #rom: MemorySegment;
+  #clock: Clock;
+  #input: Input;
   #vram = new MemorySegment(0x8000, 0x2000);
   #eram = new MemorySegment(0xa000, 0x2000);
   #wram = new MemorySegment(0xc000, 0x2000);
@@ -74,13 +84,14 @@ export class Memory {
 
   #memorySegments: IMemorySegment[];
 
-  constructor(clock: Clock, bios: Uint8Array, rom: Uint8Array | undefined = undefined) {
-    this.clock = clock;
+  constructor({ bios, rom, clock, input }: MemoryParams) {
     this.bios = new MemorySegment(0, 0x100, bios);
-    this.rom = new MemorySegment(0, 0x8000, rom);
+    this.#rom = new MemorySegment(0, 0x8000, rom);
+    this.#clock = clock;
+
     this.#memorySegments = [
       this.bios,
-      this.rom,
+      this.#rom,
       this.#vram,
       this.#eram,
       this.#wram,
@@ -89,6 +100,9 @@ export class Memory {
       this.#io,
       this.#hram,
     ];
+
+    this.#input = input;
+    this.#input.setMemory(this);
   }
 
   getByte(address: number) {
@@ -108,6 +122,10 @@ export class Memory {
 
     if (address === DMA_TRANSFER_ADDRESS) {
       this.#transferDma();
+    }
+    if (address === INPUT_ADDRESS) {
+      value = value | 0xf;
+      value = this.#input.getNewInput(value);
     }
 
     const memorySegment = this.#getMemorySegment(address);
@@ -129,7 +147,7 @@ export class Memory {
       this.setByte(targetAddress + i, byte);
     }
 
-    this.clock.increment(new ClockData(DMA_TRANSFER_LENGTH));
+    this.#clock.increment(new ClockData(DMA_TRANSFER_LENGTH));
   }
 
   getLcdControls() {

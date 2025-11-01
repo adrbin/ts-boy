@@ -11,13 +11,13 @@ export class WebButtonInputHandler {
     for (const key of Object.keys(buttons)) {
       const button = buttons[key];
       const onStart = () => {
-        input.setInput(key, true);
+        input.setInput(key, false);
       };
 
       const onEnd = async () => {
         await delay(INPUT_DELAY);
 
-        input.setInput(key, false);
+        input.setInput(key, true);
       };
 
       button.addEventListener('touchstart', onStart);
